@@ -63,28 +63,43 @@
     }
 
     .title-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 9px;
-    }
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  margin-bottom: 9px;
+}
 
-    .title {
-      flex: 1;
-      min-width: 0;
-      font-size: 17px;
-      font-weight: 850;
-    }
+.title {
+  min-width: 0;
+}
 
-    .location-status {
-      max-width: 52%;
-      color: var(--muted);
-      font-size: 12px;
-      text-align: right;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+.title-main {
+  font-size: 17px;
+  font-weight: 850;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.title-sub {
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.25;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.location-status {
+  max-width: 120px;
+  padding-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
     .chips {
       display: flex;
@@ -308,9 +323,13 @@
   <div class="topbar">
     <div class="top-card">
       <div class="title-row">
-        <div class="title">🎂小琪 2026 生日 - 薩摩耶覓食地圖☃️📍</div>
-        <div id="locationStatus" class="location-status">準備定位…</div>
-      </div>
+  <div class="title">
+    <div class="title-main">🎂 小琪 2026 生日 🎊</div>
+    <div class="title-sub">☃️ 薩摩耶覓食地圖 📍</div>
+  </div>
+
+  <div id="locationStatus" class="location-status">準備定位…</div>
+</div>
       <div id="chips" class="chips"></div>
     </div>
   </div>
