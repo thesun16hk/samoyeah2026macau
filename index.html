@@ -1589,8 +1589,9 @@ map.moveCamera({
     });
 
     expandMapButtonEl.addEventListener("click", () => {
-  collapseBottomSheet();
+  toggleBottomSheet();
 });
+    
 
     // Google Maps API authentication failure callback.
     window.gm_authFailure = function() {
