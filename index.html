@@ -592,15 +592,18 @@ function setupBottomSheet() {
   const DRAG_THRESHOLD = 6;
 
   // 手指上下移動約 105px = 1 個 zoom level
-  const PIXELS_PER_ZOOM = 105;
+  const PIXELS_PER_ZOOM = 140;
 
   let lastTap = null;
   let pointerState = null;
   let zoomGesture = null;
 
   let zoomFrame = null;
-  let pendingZoom = null;
+let targetZoom = null;
+let renderedZoom = null;
 
+const ZOOM_SMOOTHING = 0.22;
+      
   // 用嚟避免同雙指 pinch zoom 打交
   const activeTouches = new Set();
 
@@ -640,21 +643,53 @@ function setupBottomSheet() {
 
 
   function scheduleZoom(zoom) {
-    pendingZoom = clampZoom(zoom);
+  targetZoom = clampZoom(zoom);
 
-    if (zoomFrame !== null) return;
-
-    zoomFrame = requestAnimationFrame(() => {
-      zoomFrame = null;
-
-      if (
-        map &&
-        pendingZoom !== null
-      ) {
-        map.setZoom(pendingZoom);
-      }
-    });
+  if (renderedZoom === null) {
+    renderedZoom = map.getZoom() ?? targetZoom;
   }
+
+  if (zoomFrame !== null) {
+    return;
+  }
+
+  function animateZoom() {
+    if (
+      !map ||
+      targetZoom === null ||
+      renderedZoom === null
+    ) {
+      zoomFrame = null;
+      return;
+    }
+
+    const difference =
+      targetZoom - renderedZoom;
+
+    renderedZoom +=
+      difference * ZOOM_SMOOTHING;
+
+    if (Math.abs(difference) < 0.002) {
+      renderedZoom = targetZoom;
+    }
+
+    map.moveCamera({
+      zoom: renderedZoom
+    });
+
+    if (
+      Math.abs(targetZoom - renderedZoom) >= 0.002
+    ) {
+      zoomFrame =
+        requestAnimationFrame(animateZoom);
+    } else {
+      zoomFrame = null;
+    }
+  }
+
+  zoomFrame =
+    requestAnimationFrame(animateZoom);
+}
 
 
   function restoreNormalMapGestures() {
@@ -682,8 +717,9 @@ function setupBottomSheet() {
       zoomFrame = null;
     }
 
-    pendingZoom = null;
-
+targetZoom = null;
+renderedZoom = null;
+    
     restoreNormalMapGestures();
   }
 
@@ -898,15 +934,16 @@ function setupBottomSheet() {
 
 
       if (
-        pendingZoom !== null &&
-        map
-      ) {
-        map.setZoom(
-          clampZoom(pendingZoom)
-        );
-      }
+  targetZoom !== null &&
+  map
+) {
+  map.moveCamera({
+    zoom: clampZoom(targetZoom)
+  });
+}
 
-      pendingZoom = null;
+targetZoom = null;
+renderedZoom = null;
 
 
       restoreNormalMapGestures();
@@ -930,9 +967,9 @@ function setupBottomSheet() {
         !moved &&
         map
       ) {
-        map.setZoom(
-          clampZoom(startZoom + 1)
-        );
+map.moveCamera({
+  zoom: clampZoom(startZoom + 1)
+});
       }
 
 
@@ -1469,8 +1506,8 @@ function setupBottomSheet() {
 
   gestureHandling: "greedy",
   isFractionalZoomEnabled: true,
-  renderingType: google.maps.RenderingType.RASTER,
-
+  renderingType: google.maps.RenderingType.VECTOR,
+          
   styles: [
     {
       featureType: "poi.business",
