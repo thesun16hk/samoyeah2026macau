@@ -459,15 +459,28 @@
       clearRestaurantMarkers();
 
       items.filter(hasCoords).forEach(place => {
-        const marker = new google.maps.Marker({
-          map,
-          position: { lat: place.lat, lng: place.lng },
-          title: place.name,
-          label: {
-            text: place.emoji || "🍴",
-            fontSize: "16px"
-          }
-        });
+       const marker = new google.maps.Marker({
+  map,
+  position: { lat: place.lat, lng: place.lng },
+  title: place.name,
+
+  icon: {
+    path: google.maps.SymbolPath.CIRCLE,
+    scale: 18,
+    fillColor: "#ffffff",
+    fillOpacity: 0.98,
+    strokeColor: "#111827",
+    strokeOpacity: 1,
+    strokeWeight: 2
+  },
+
+  label: {
+    text: place.emoji || "🍴",
+    fontSize: "18px"
+  },
+
+  zIndex: 10
+});
 
         marker.addListener("click", () => {
           const distance = userPosition
@@ -815,16 +828,29 @@
         const { Geocoder } = await google.maps.importLibrary("geocoding");
 
         map = new Map(document.getElementById("map"), {
-          center: MACAU_CENTER,
-          zoom: 14,
-          mapTypeControl: false,
-          fullscreenControl: false,
-          streetViewControl: false,
-          clickableIcons: true,
-          gestureHandling: "greedy",
-          renderingType: google.maps.RenderingType.RASTER
-        });
+  center: MACAU_CENTER,
+  zoom: 14,
+  mapTypeControl: false,
+  fullscreenControl: false,
+  streetViewControl: false,
 
+  clickableIcons: false,
+
+  gestureHandling: "greedy",
+  renderingType: google.maps.RenderingType.RASTER,
+
+  styles: [
+    {
+      featureType: "poi.business",
+      stylers: [{ visibility: "off" }]
+    },
+    {
+      featureType: "poi.attraction",
+      elementType: "labels.icon",
+      stylers: [{ visibility: "off" }]
+    }
+  ]
+});
         geocoder = new Geocoder();
         infoWindow = new google.maps.InfoWindow();
 
