@@ -402,7 +402,7 @@ body.sheet-dragging .expand-map-button {
   class="expand-map-button"
   aria-label="放大地圖"
   title="放大地圖"
->⤢</button>
+>🗾</button>
   
   <button id="locateButton" class="locate-button" aria-label="返回我的位置">📍</button>
 
@@ -521,7 +521,7 @@ function updateSheetToggleButton() {
 
   if (sheetExpanded) {
     // Sheet 高：下一個動作係放大地圖
-    expandMapButtonEl.textContent = "⤢";
+    expandMapButtonEl.textContent = "🗾";
     expandMapButtonEl.setAttribute(
       "aria-label",
       "放大地圖"
@@ -529,7 +529,7 @@ function updateSheetToggleButton() {
     expandMapButtonEl.title = "放大地圖";
   } else {
     // Sheet 低：下一個動作係展開餐廳列表
-    expandMapButtonEl.textContent = "▤";
+    expandMapButtonEl.textContent = "📋";
     expandMapButtonEl.setAttribute(
       "aria-label",
       "展開餐廳列表"
