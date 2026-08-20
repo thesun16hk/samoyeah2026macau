@@ -7,15 +7,9 @@
   <meta name="robots" content="noindex,nofollow,noarchive" />
   <title>澳門食嘢 Map</title>
 
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    crossorigin=""
-  />
-
   <style>
     :root {
-      --panel: rgba(255, 255, 255, 0.97);
+      --panel: rgba(255,255,255,.97);
       --text: #171717;
       --muted: #6b7280;
       --border: #e5e7eb;
@@ -91,7 +85,6 @@
       scrollbar-width: none;
       padding-bottom: 1px;
     }
-
     .chips::-webkit-scrollbar { display: none; }
 
     .chip {
@@ -174,7 +167,7 @@
     #results {
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      padding-bottom: 6px;
+      padding-bottom: 28px;
     }
 
     .place-card {
@@ -240,82 +233,45 @@
       border: 1px solid #e5e7eb;
     }
 
-    .loading-note {
+    .loading-note, .setup-note {
       color: var(--muted);
       font-size: 12px;
-      line-height: 1.4;
-      padding: 3px 4px 7px;
+      line-height: 1.5;
+      padding: 6px 4px 9px;
     }
 
-    .empty {
-      color: var(--muted);
-      text-align: center;
-      padding: 28px 14px;
+    .setup-note strong { color: #111; }
+
+    .error-card {
+      position: fixed;
+      z-index: 2000;
+      left: 14px;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      max-width: 520px;
+      margin: auto;
+      padding: 18px;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 12px 35px rgba(0,0,0,.2);
       font-size: 14px;
       line-height: 1.55;
     }
 
-    .user-dot-wrap { position: relative; width: 26px; height: 26px; }
-
-    .user-dot-ring {
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      background: rgba(66, 133, 244, .18);
-      animation: pulse 1.8s ease-out infinite;
+    .error-card h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
     }
 
-    .user-dot {
-      position: absolute;
-      left: 6px;
-      top: 6px;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #4285f4;
-      border: 3px solid #fff;
-      box-shadow: 0 1px 5px rgba(0,0,0,.35);
+    .footer-links {
+      padding: 8px 4px 14px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
     }
 
-    @keyframes pulse {
-      0% { transform: scale(.65); opacity: .95; }
-      100% { transform: scale(1.35); opacity: 0; }
-    }
-
-    .restaurant-pin {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 34px;
-      height: 34px;
-      border-radius: 17px 17px 17px 3px;
-      transform: rotate(-45deg);
-      background: #111827;
-      border: 2px solid #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,.3);
-      color: #fff;
-      font-size: 15px;
-    }
-
-    .restaurant-pin span {
-      transform: rotate(45deg);
-      line-height: 1;
-    }
-
-    .leaflet-popup-content-wrapper { border-radius: 14px; }
-    .popup-name { font-weight: 850; font-size: 14px; margin-bottom: 4px; }
-    .popup-meta { color: #6b7280; font-size: 12px; margin-bottom: 8px; }
-
-    .popup-nav {
-      display: inline-block;
-      background: #111827;
-      color: #fff !important;
-      text-decoration: none;
-      font-weight: 800;
-      font-size: 12px;
-      padding: 7px 9px;
-      border-radius: 9px;
-    }
+    .footer-links a { color: inherit; }
 
     @media (min-width: 760px) {
       :root { --sheet-height: 32vh; }
@@ -349,47 +305,29 @@
     </div>
   </div>
 
-  <button id="locateButton" class="locate-button" aria-label="返回我的位置" title="返回我的位置">◎</button>
+  <button id="locateButton" class="locate-button" aria-label="返回我的位置">◎</button>
 
   <section class="sheet">
     <div class="grabber"></div>
     <div class="sheet-head">
       <div id="sheetTitle" class="sheet-title">全部餐廳</div>
-      <div id="sheetHint" class="sheet-hint">準備餐廳位置…</div>
+      <div id="sheetHint" class="sheet-hint">準備 Google Maps…</div>
     </div>
     <div id="results"></div>
   </section>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-
-  <!-- 你日後主要只需要改 restaurants.js -->
+  <!-- 你日後通常只改 config.js / restaurants.js -->
+  <script src="./config.js"></script>
   <script src="./restaurants.js"></script>
 
   <script>
-    const MACAU_CENTER = [22.1987, 113.5439];
-    const GEO_CACHE_KEY = "macau-food-map-geocache-v3";
+    const MACAU_CENTER = { lat: 22.1987, lng: 113.5439 };
 
-    if (!Array.isArray(window.restaurants) && typeof restaurants === "undefined") {
-      alert("讀取唔到 restaurants.js，請確認 index.html 同 restaurants.js 放喺同一個資料夾。");
-    }
-
-    const data = typeof restaurants !== "undefined" ? restaurants : window.restaurants;
-
-    const map = L.map("map", {
-      zoomControl: false,
-      attributionControl: true
-    }).setView(MACAU_CENTER, 14);
-
-    L.control.zoom({ position: "bottomleft" }).addTo(map);
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    const markerLayer = L.layerGroup().addTo(map);
-
+    let map;
+    let geocoder;
+    let infoWindow;
     let activeCategory = "全部";
+    let restaurantMarkers = [];
     let userPosition = null;
     let userMarker = null;
     let accuracyCircle = null;
@@ -404,41 +342,24 @@
     const locationStatusEl = document.getElementById("locationStatus");
     const locateButtonEl = document.getElementById("locateButton");
 
+    function showFatal(message) {
+      const card = document.createElement("div");
+      card.className = "error-card";
+      card.innerHTML = `<h2>地圖未能啟動</h2><div>${message}</div>`;
+      document.body.appendChild(card);
+    }
+
+    function hasCoords(place) {
+      return Number.isFinite(place.lat) && Number.isFinite(place.lng);
+    }
+
     function categoryEmoji(category) {
-      const found = data.find(r => r.category === category);
+      const found = restaurants.find(r => r.category === category);
       return found?.emoji || "🍴";
     }
 
-    function getGeoCache() {
-      try {
-        return JSON.parse(localStorage.getItem(GEO_CACHE_KEY) || "{}");
-      } catch {
-        return {};
-      }
-    }
-
-    function saveGeoCache(cache) {
-      try {
-        localStorage.setItem(GEO_CACHE_KEY, JSON.stringify(cache));
-      } catch {}
-    }
-
-    function hydrateCachedCoordinates() {
-      const cache = getGeoCache();
-
-      data.forEach(place => {
-        if (Number.isFinite(place.lat) && Number.isFinite(place.lng)) return;
-
-        const saved = cache[place.id];
-        if (saved && Number.isFinite(saved.lat) && Number.isFinite(saved.lng)) {
-          place.lat = saved.lat;
-          place.lng = saved.lng;
-        }
-      });
-    }
-
     function uniqueCategories() {
-      return [...new Set(data.map(r => r.category).filter(Boolean))];
+      return [...new Set(restaurants.map(r => r.category).filter(Boolean))];
     }
 
     function makeChips() {
@@ -464,12 +385,8 @@
     }
 
     function filteredRestaurants() {
-      if (activeCategory === "全部") return [...data];
-      return data.filter(r => r.category === activeCategory);
-    }
-
-    function hasCoords(place) {
-      return Number.isFinite(place.lat) && Number.isFinite(place.lng);
+      if (activeCategory === "全部") return [...restaurants];
+      return restaurants.filter(r => r.category === activeCategory);
     }
 
     function toRad(deg) {
@@ -480,6 +397,7 @@
       const R = 6371000;
       const dLat = toRad(lat2 - lat1);
       const dLng = toRad(lng2 - lng1);
+
       const a =
         Math.sin(dLat / 2) ** 2 +
         Math.cos(toRad(lat1)) *
@@ -495,62 +413,58 @@
       return `${(meters / 1000).toFixed(1)} km`;
     }
 
-    function googleMapsDirectionsUrl(place) {
+    function directionsUrl(place) {
       if (!hasCoords(place)) return place.mapsUrl || "#";
-
-      const destination = encodeURIComponent(`${place.lat},${place.lng}`);
-      return `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=walking`;
+      const dest = encodeURIComponent(`${place.lat},${place.lng}`);
+      return `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=walking`;
     }
 
-    function restaurantIcon(emoji) {
-      return L.divIcon({
-        className: "",
-        html: `<div class="restaurant-pin"><span>${escapeHtml(emoji || "🍴")}</span></div>`,
-        iconSize: [34, 34],
-        iconAnchor: [17, 31],
-        popupAnchor: [0, -29]
-      });
-    }
-
-    function userIcon() {
-      return L.divIcon({
-        className: "",
-        html: `
-          <div class="user-dot-wrap">
-            <div class="user-dot-ring"></div>
-            <div class="user-dot"></div>
-          </div>
-        `,
-        iconSize: [26, 26],
-        iconAnchor: [13, 13]
-      });
+    function clearRestaurantMarkers() {
+      restaurantMarkers.forEach(marker => marker.setMap(null));
+      restaurantMarkers = [];
     }
 
     function renderMarkers(items) {
-      markerLayer.clearLayers();
+      if (!map) return;
+
+      clearRestaurantMarkers();
 
       items.filter(hasCoords).forEach(place => {
-        const distance = userPosition
-          ? distanceMeters(userPosition.lat, userPosition.lng, place.lat, place.lng)
-          : null;
+        const marker = new google.maps.Marker({
+          map,
+          position: { lat: place.lat, lng: place.lng },
+          title: place.name,
+          label: {
+            text: place.emoji || "🍴",
+            fontSize: "16px"
+          }
+        });
 
-        const popup = `
-          <div class="popup-name">${escapeHtml(place.name)}</div>
-          <div class="popup-meta">
-            ${escapeHtml(place.category)} · ${formatDistance(distance)}<br>
-            ${escapeHtml(place.address || "")}
-          </div>
-          <a class="popup-nav"
-             href="${googleMapsDirectionsUrl(place)}"
-             target="_blank"
-             rel="noopener noreferrer">步行導航</a>
-        `;
+        marker.addListener("click", () => {
+          const distance = userPosition
+            ? distanceMeters(userPosition.lat, userPosition.lng, place.lat, place.lng)
+            : null;
 
-        L.marker([place.lat, place.lng], {
-          icon: restaurantIcon(place.emoji)
-        })
-        .bindPopup(popup)
-        .addTo(markerLayer);
+          infoWindow.setContent(`
+            <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:240px">
+              <div style="font-weight:800;font-size:15px;margin-bottom:4px">${escapeHtml(place.name)}</div>
+              <div style="font-size:12px;color:#6b7280;margin-bottom:8px">
+                ${escapeHtml(place.category)} · ${formatDistance(distance)}<br>
+                ${escapeHtml(place.address || "")}
+              </div>
+              <a href="${directionsUrl(place)}"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 style="display:inline-block;background:#111827;color:#fff;text-decoration:none;font-weight:800;font-size:12px;padding:7px 9px;border-radius:9px">
+                 步行導航
+              </a>
+            </div>
+          `);
+
+          infoWindow.open({ anchor: marker, map });
+        });
+
+        restaurantMarkers.push(marker);
       });
     }
 
@@ -582,26 +496,21 @@
         : `${activeCategory} (${rows.length})`;
 
       if (!geocodingDone) {
-        sheetHintEl.textContent = `餐廳位置 ${geocodingCount}/${data.length}`;
+        sheetHintEl.textContent = `餐廳位置 ${geocodingCount}/${restaurants.length}`;
       } else if (userPosition) {
         sheetHintEl.textContent = "由近到遠 · 直線距離";
       } else {
         sheetHintEl.textContent = "餐廳位置已準備";
       }
 
-      if (!rows.length) {
-        resultsEl.innerHTML = `<div class="empty">呢個分類暫時未有餐廳。</div>`;
-        return;
-      }
-
       const loading = !geocodingDone
-        ? `<div class="loading-note">第一次開啟會逐間確認未有座標嘅餐廳；成功後會存在你部手機。</div>`
+        ? `<div class="loading-note">正在用 Google 確認未有座標嘅餐廳位置…</div>`
         : "";
 
       resultsEl.innerHTML = loading + rows.map(place => {
         const locText = hasCoords(place)
           ? (place.distance != null ? formatDistance(place.distance) : "已定位餐廳")
-          : "正在確認位置…";
+          : "位置未確認";
 
         return `
           <div class="place-card"
@@ -620,7 +529,7 @@
 
             <div class="actions">
               <a class="nav-btn"
-                 href="${googleMapsDirectionsUrl(place)}"
+                 href="${directionsUrl(place)}"
                  target="_blank"
                  rel="noopener noreferrer">導航 ↗</a>
 
@@ -631,7 +540,13 @@
             </div>
           </div>
         `;
-      }).join("");
+      }).join("") + `
+        <div class="footer-links">
+          <a href="./privacy.html">私隱</a>
+          &nbsp;·&nbsp;
+          <a href="./terms.html">使用條款</a>
+        </div>
+      `;
 
       resultsEl.querySelectorAll(".place-card").forEach(card => {
         card.addEventListener("click", event => {
@@ -639,14 +554,14 @@
 
           const latText = card.dataset.lat;
           const lngText = card.dataset.lng;
-
-          if (!latText || !lngText) return;
+          if (!latText || !lngText || !map) return;
 
           const lat = Number(latText);
           const lng = Number(lngText);
 
           if (Number.isFinite(lat) && Number.isFinite(lng)) {
-            map.setView([lat, lng], Math.max(map.getZoom(), 16), { animate: true });
+            map.panTo({ lat, lng });
+            map.setZoom(Math.max(map.getZoom() || 16, 16));
           }
         });
       });
@@ -659,29 +574,35 @@
     }
 
     function fitVisibleRestaurants() {
+      if (!map) return;
+
       const items = filteredRestaurants().filter(hasCoords);
       if (!items.length) return;
 
-      const points = items.map(r => [r.lat, r.lng]);
+      const bounds = new google.maps.LatLngBounds();
 
-      if (userPosition) {
-        points.push([userPosition.lat, userPosition.lng]);
-      }
-
-      if (points.length === 1) {
-        map.setView(points[0], 16, { animate: true });
-        return;
-      }
-
-      map.fitBounds(L.latLngBounds(points), {
-        paddingTopLeft: [35, 115],
-        paddingBottomRight: [35, 35],
-        maxZoom: 16,
-        animate: true
+      items.forEach(place => {
+        bounds.extend({ lat: place.lat, lng: place.lng });
       });
+
+      if (userPosition) bounds.extend(userPosition);
+
+      if (items.length === 1 && !userPosition) {
+        map.setCenter({ lat: items[0].lat, lng: items[0].lng });
+        map.setZoom(16);
+      } else {
+        map.fitBounds(bounds, {
+          top: 120,
+          right: 45,
+          bottom: 45,
+          left: 45
+        });
+      }
     }
 
     function updateUserLocation(position) {
+      if (!map) return;
+
       const { latitude, longitude, accuracy } = position.coords;
       userPosition = { lat: latitude, lng: longitude };
 
@@ -690,29 +611,43 @@
         : "已定位";
 
       if (!userMarker) {
-        userMarker = L.marker([latitude, longitude], {
-          icon: userIcon(),
-          zIndexOffset: 1000,
-          interactive: false
-        }).addTo(map);
+        userMarker = new google.maps.Marker({
+          map,
+          position: userPosition,
+          title: "你而家位置",
+          zIndex: 9999,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: "#4285F4",
+            fillOpacity: 1,
+            strokeColor: "#FFFFFF",
+            strokeWeight: 3
+          }
+        });
       } else {
-        userMarker.setLatLng([latitude, longitude]);
+        userMarker.setPosition(userPosition);
       }
 
       if (!accuracyCircle) {
-        accuracyCircle = L.circle([latitude, longitude], {
+        accuracyCircle = new google.maps.Circle({
+          map,
+          center: userPosition,
           radius: accuracy || 0,
-          weight: 1,
-          opacity: 0.25,
-          fillOpacity: 0.05
-        }).addTo(map);
+          strokeColor: "#4285F4",
+          strokeOpacity: 0.25,
+          strokeWeight: 1,
+          fillColor: "#4285F4",
+          fillOpacity: 0.06
+        });
       } else {
-        accuracyCircle.setLatLng([latitude, longitude]);
+        accuracyCircle.setCenter(userPosition);
         accuracyCircle.setRadius(accuracy || 0);
       }
 
       if (!hasCenteredOnUser) {
-        map.setView([latitude, longitude], 16, { animate: true });
+        map.setCenter(userPosition);
+        map.setZoom(16);
         hasCenteredOnUser = true;
       }
 
@@ -756,67 +691,32 @@
       );
     }
 
-    async function fetchJsonWithTimeout(url, timeoutMs = 8000) {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
+    async function geocodePlace(place) {
+      const address = place.geocodeQuery || `${place.name} ${place.address || ""} 澳門`;
 
       try {
-        const response = await fetch(url, {
-          headers: { "Accept": "application/json" },
-          signal: controller.signal
+        const response = await geocoder.geocode({
+          address,
+          region: "MO",
+          componentRestrictions: { country: "MO" }
         });
 
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return await response.json();
-      } finally {
-        clearTimeout(timer);
+        const first = response.results?.[0];
+        if (!first) return false;
+
+        const loc = first.geometry.location;
+        const lat = loc.lat();
+        const lng = loc.lng();
+
+        if (!isMacauCoordinate(lat, lng)) return false;
+
+        place.lat = lat;
+        place.lng = lng;
+        return true;
+      } catch (error) {
+        console.warn("Geocode failed:", place.name, error);
+        return false;
       }
-    }
-
-    async function geocodeWithNominatim(place) {
-      const queryText = place.geocodeQuery || `${place.name} ${place.address || ""} 澳門`;
-      const query = encodeURIComponent(queryText);
-
-      const url =
-        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1` +
-        `&countrycodes=mo&accept-language=zh-HK&q=${query}`;
-
-      try {
-        const results = await fetchJsonWithTimeout(url);
-
-        if (Array.isArray(results) && results.length) {
-          const lat = Number(results[0].lat);
-          const lng = Number(results[0].lon);
-
-          if (isMacauCoordinate(lat, lng)) {
-            return { lat, lng };
-          }
-        }
-      } catch {}
-
-      return null;
-    }
-
-    async function geocodeWithPhoton(place) {
-      const queryText = place.geocodeQuery || `${place.name} ${place.address || ""} 澳門`;
-      const query = encodeURIComponent(queryText);
-      const url = `https://photon.komoot.io/api/?limit=1&q=${query}`;
-
-      try {
-        const result = await fetchJsonWithTimeout(url);
-        const coords = result?.features?.[0]?.geometry?.coordinates;
-
-        if (Array.isArray(coords) && coords.length >= 2) {
-          const lng = Number(coords[0]);
-          const lat = Number(coords[1]);
-
-          if (isMacauCoordinate(lat, lng)) {
-            return { lat, lng };
-          }
-        }
-      } catch {}
-
-      return null;
     }
 
     function isMacauCoordinate(lat, lng) {
@@ -829,33 +729,18 @@
     }
 
     async function resolveRestaurantLocations() {
-      hydrateCachedCoordinates();
-
-      const cache = getGeoCache();
-
-      geocodingCount = data.filter(hasCoords).length;
+      geocodingCount = restaurants.filter(hasCoords).length;
       render();
 
-      const pending = data.filter(place => !hasCoords(place));
+      const pending = restaurants.filter(place => !hasCoords(place));
 
       for (const place of pending) {
-        let result = await geocodeWithNominatim(place);
-
-        if (!result) {
-          result = await geocodeWithPhoton(place);
-        }
-
-        if (result) {
-          place.lat = result.lat;
-          place.lng = result.lng;
-          cache[place.id] = result;
-          saveGeoCache(cache);
-        }
-
-        geocodingCount = data.filter(hasCoords).length;
+        await geocodePlace(place);
+        geocodingCount = restaurants.filter(hasCoords).length;
         render();
 
-        await sleep(1100);
+        // 稍為分散請求，避免一次過太密集。
+        await sleep(250);
       }
 
       geocodingDone = true;
@@ -867,14 +752,6 @@
       return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    locateButtonEl.addEventListener("click", () => {
-      if (userPosition) {
-        map.setView([userPosition.lat, userPosition.lng], 17, { animate: true });
-      } else {
-        startLocation();
-      }
-    });
-
     function escapeHtml(text) {
       return String(text ?? "")
         .replaceAll("&", "&amp;")
@@ -884,16 +761,85 @@
         .replaceAll("'", "&#039;");
     }
 
-    hydrateCachedCoordinates();
-    makeChips();
-    render();
-    fitVisibleRestaurants();
-    startLocation();
-    resolveRestaurantLocations();
-
-    window.addEventListener("resize", () => {
-      setTimeout(() => map.invalidateSize(), 150);
+    locateButtonEl.addEventListener("click", () => {
+      if (userPosition && map) {
+        map.setCenter(userPosition);
+        map.setZoom(17);
+      } else {
+        startLocation();
+      }
     });
+
+    // Google Maps API authentication failure callback.
+    window.gm_authFailure = function() {
+      showFatal(
+        "Google Maps API 驗證失敗。請檢查 <strong>config.js</strong> 入面嘅 API key、Billing、" +
+        "Maps JavaScript API，以及 Website restrictions。"
+      );
+    };
+
+    window.initGoogleMap = async function() {
+      try {
+        map = new google.maps.Map(document.getElementById("map"), {
+          center: MACAU_CENTER,
+          zoom: 14,
+          mapTypeControl: false,
+          fullscreenControl: false,
+          streetViewControl: false,
+          clickableIcons: true,
+          gestureHandling: "greedy"
+        });
+
+        const { Geocoder } = await google.maps.importLibrary("geocoding");
+        geocoder = new Geocoder();
+        infoWindow = new google.maps.InfoWindow();
+
+        makeChips();
+        render();
+        startLocation();
+        await resolveRestaurantLocations();
+      } catch (error) {
+        console.error(error);
+        showFatal("Google Maps 啟動失敗。請重新整理；如果仍然失敗，檢查 API 設定。");
+      }
+    };
+
+    function loadGoogleMaps() {
+      if (
+        typeof MAP_CONFIG === "undefined" ||
+        !MAP_CONFIG.googleMapsApiKey ||
+        MAP_CONFIG.googleMapsApiKey === "PASTE_YOUR_API_KEY_HERE"
+      ) {
+        makeChips();
+        geocodingDone = true;
+        renderList(filteredRestaurants());
+
+        showFatal(
+          "你仲未填 Google Maps API key。<br><br>" +
+          "打開 <strong>config.js</strong>，將 <code>PASTE_YOUR_API_KEY_HERE</code> " +
+          "換成你自己嘅 key，再 Commit 去 GitHub。"
+        );
+        return;
+      }
+
+      const script = document.createElement("script");
+      const params = new URLSearchParams({
+        key: MAP_CONFIG.googleMapsApiKey,
+        loading: "async",
+        callback: "initGoogleMap",
+        v: "weekly"
+      });
+
+      script.src = `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
+      script.async = true;
+      script.onerror = () => {
+        showFatal("載入 Google Maps 失敗。請檢查網絡或 API key 設定。");
+      };
+
+      document.head.appendChild(script);
+    }
+
+    loadGoogleMaps();
   </script>
 </body>
 </html>
