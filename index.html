@@ -780,19 +780,38 @@
 
     window.initGoogleMap = async function() {
       try {
-        map = new google.maps.Map(document.getElementById("map"), {
+        // Google 現時建議先載入 maps library，再建立 Map。
+        // 強制用 Raster，對手機 Safari / 較舊裝置較穩定，而且毋須 Map ID。
+        const { Map } = await google.maps.importLibrary("maps");
+        const { Geocoder } = await google.maps.importLibrary("geocoding");
+
+        map = new Map(document.getElementById("map"), {
           center: MACAU_CENTER,
           zoom: 14,
           mapTypeControl: false,
           fullscreenControl: false,
           streetViewControl: false,
           clickableIcons: true,
-          gestureHandling: "greedy"
+          gestureHandling: "greedy",
+          renderingType: google.maps.RenderingType.RASTER
         });
 
-        const { Geocoder } = await google.maps.importLibrary("geocoding");
         geocoder = new Geocoder();
         infoWindow = new google.maps.InfoWindow();
+
+        // 如果底圖成功完成第一次 tiles load，就代表 Google Maps rendering 正常。
+        let tilesLoaded = false;
+        google.maps.event.addListenerOnce(map, "tilesloaded", () => {
+          tilesLoaded = true;
+          console.log("Google Maps tiles loaded");
+        });
+
+        // 如果 8 秒後仲未有 tiles，顯示較清楚提示，方便排錯。
+        setTimeout(() => {
+          if (!tilesLoaded) {
+            console.warn("Google Maps tiles have not loaded after 8 seconds.");
+          }
+        }, 8000);
 
         makeChips();
         render();
@@ -800,7 +819,10 @@
         await resolveRestaurantLocations();
       } catch (error) {
         console.error(error);
-        showFatal("Google Maps 啟動失敗。請重新整理；如果仍然失敗，檢查 API 設定。");
+        showFatal(
+          "Google Maps 啟動失敗。請檢查 API key、Billing、Maps JavaScript API，" +
+          "以及 Website restrictions；之後重新整理。"
+        );
       }
     };
 
