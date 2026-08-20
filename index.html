@@ -450,7 +450,7 @@ body.sheet-dragging .expand-map-button {
 const sheetEl = document.querySelector(".sheet");
 const sheetGrabberEl = document.getElementById("sheetGrabber");
 
-    let collapseBottomSheet = () => {};
+let toggleBottomSheet = () => {};
     
 function setupBottomSheet() {
   let sheetMinHeight = 150;
@@ -516,13 +516,65 @@ const maxRatio = window.innerWidth >= 760 ? 0.45 : 0.60;
   }, 230);
 }
 
-collapseBottomSheet = () => {
-  snapSheet(false);
+function updateSheetToggleButton() {
+  if (!expandMapButtonEl) return;
+
+  if (sheetExpanded) {
+    // Sheet 高：下一個動作係放大地圖
+    expandMapButtonEl.textContent = "⤢";
+    expandMapButtonEl.setAttribute(
+      "aria-label",
+      "放大地圖"
+    );
+    expandMapButtonEl.title = "放大地圖";
+  } else {
+    // Sheet 低：下一個動作係展開餐廳列表
+    expandMapButtonEl.textContent = "▤";
+    expandMapButtonEl.setAttribute(
+      "aria-label",
+      "展開餐廳列表"
+    );
+    expandMapButtonEl.title = "展開餐廳列表";
+  }
+}
+
+
+function snapSheet(expanded) {
+  sheetExpanded = expanded;
+
+  document.body.classList.remove("sheet-dragging");
+
+  setSheetHeight(
+    sheetExpanded
+      ? sheetMaxHeight
+      : sheetMinHeight
+  );
+
+  // 更新右下角 toggle icon
+  updateSheetToggleButton();
+
+  // Sheet 改變後俾 Google Maps 重新確認尺寸。
+  setTimeout(() => {
+    if (!map || typeof google === "undefined") return;
+
+    const center = map.getCenter();
+
+    google.maps.event.trigger(map, "resize");
+
+    if (center) {
+      map.setCenter(center);
+    }
+  }, 230);
+}
+
+
+toggleBottomSheet = () => {
+  snapSheet(!sheetExpanded);
 };
   
-
   calculateBounds();
   setSheetHeight(sheetMaxHeight);
+  updateSheetToggleButton();
 
   sheetGrabberEl.addEventListener("pointerdown", event => {
     if (event.pointerType === "mouse" && event.button !== 0) return;
@@ -604,20 +656,22 @@ collapseBottomSheet = () => {
     event => finishDrag(event, true)
   );
 
-  // 旋轉手機時重新計算。
-  window.addEventListener("orientationchange", () => {
-    setTimeout(() => {
-      calculateBounds();
+ // 旋轉手機時重新計算。
+window.addEventListener("orientationchange", () => {
+  setTimeout(() => {
+    calculateBounds();
 
-      setSheetHeight(
-        sheetExpanded
-          ? sheetMaxHeight
-          : sheetMinHeight
-      );
-    }, 250);
-  });
+    setSheetHeight(
+      sheetExpanded
+        ? sheetMaxHeight
+        : sheetMinHeight
+    );
 
-  window.addEventListener("resize", () => {
+    updateSheetToggleButton();
+  }, 250);
+});
+
+window.addEventListener("resize", () => {
   calculateBounds();
 
   setSheetHeight(
@@ -625,9 +679,10 @@ collapseBottomSheet = () => {
       ? sheetMaxHeight
       : sheetMinHeight
   );
-});
 
-}
+  updateSheetToggleButton();
+});
+  
     function setupOneHandZoom() {
   const mapContainer = document.getElementById("map-container");
 
