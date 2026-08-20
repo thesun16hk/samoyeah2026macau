@@ -424,6 +424,8 @@ body.sheet-dragging .expand-map-button {
   <script src="./config.js"></script>
   <script src="./restaurants.js"></script>
 
+  <script src="https://unpkg.com/@googlemaps/markerclusterer@2.6.2/dist/index.min.js"></script>
+  
   <script>
     const MACAU_CENTER = { lat: 22.1987, lng: 113.5439 };
 
@@ -431,7 +433,9 @@ body.sheet-dragging .expand-map-button {
     let geocoder;
     let infoWindow;
     let activeCategory = "全部";
-    let restaurantMarkers = [];
+let restaurantMarkers = [];
+let restaurantClusterer = null;
+    
     let userPosition = null;
     let userMarker = null;
     let accuracyCircle = null;
@@ -1223,67 +1227,238 @@ map.moveCamera({
     }
 
     function clearRestaurantMarkers() {
-      restaurantMarkers.forEach(marker => marker.setMap(null));
-      restaurantMarkers = [];
-    }
+      if (restaurantClusterer) {
+    restaurantClusterer.clearMarkers();
+    restaurantClusterer.setMap(null);
+    restaurantClusterer = null;
+  }
 
-    function renderMarkers(items) {
-      if (!map) return;
+  restaurantMarkers.forEach(marker => {
+    marker.setMap(null);
+  });
 
-      clearRestaurantMarkers();
+  restaurantMarkers = [];
+}
 
-      items.filter(hasCoords).forEach(place => {
-       const marker = new google.maps.Marker({
-  map,
-  position: { lat: place.lat, lng: place.lng },
-  title: place.name,
+function renderMarkers(items) {
+  if (!map) return;
 
-  icon: {
-    path: google.maps.SymbolPath.CIRCLE,
-    scale: 18,
-    fillColor: "#e3c5f2",
-    fillOpacity: 0.98,
-    strokeColor: "#ce85f2",
-    strokeOpacity: 1,
-    strokeWeight: 2
-  },
+  clearRestaurantMarkers();
 
-  label: {
-    text: place.emoji || "🍴",
-    fontSize: "18px"
-  },
 
-  zIndex: 10
-});
+  // =========================================================
+  // 1. 先建立所有餐廳 markers
+  // =========================================================
 
-        marker.addListener("click", () => {
-          const distance = userPosition
-            ? distanceMeters(userPosition.lat, userPosition.lng, place.lat, place.lng)
-            : null;
+  items.filter(hasCoords).forEach(place => {
 
-          infoWindow.setContent(`
-            <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:240px">
-              <div style="font-weight:800;font-size:15px;margin-bottom:4px">${escapeHtml(place.name)}</div>
-              <div style="font-size:12px;color:#6b7280;margin-bottom:8px">
-                ${escapeHtml(place.category)} · ${formatDistance(distance)}<br>
-                ${escapeHtml(place.address || "")}
-              </div>
-              <a href="${directionsUrl(place)}"
-                 target="_blank"
-                 rel="noopener noreferrer"
-                 style="display:inline-block;background:#111827;color:#fff;text-decoration:none;font-weight:800;font-size:12px;padding:7px 9px;border-radius:9px">
-                 步行導航
-              </a>
-            </div>
-          `);
+    const marker = new google.maps.Marker({
+      // 注意：呢度唔好寫 map: map
+      // 由 MarkerClusterer 決定 marker 幾時顯示。
 
-          infoWindow.open({ anchor: marker, map });
-        });
+      position: {
+        lat: place.lat,
+        lng: place.lng
+      },
 
-        restaurantMarkers.push(marker);
+      title: place.name,
+
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 18,
+
+        fillColor: "#e3c5f2",
+        fillOpacity: 0.98,
+
+        strokeColor: "#ce85f2",
+        strokeOpacity: 1,
+        strokeWeight: 2
+      },
+
+      label: {
+        text: place.emoji || "🍴",
+        fontSize: "18px"
+      },
+
+      zIndex: 10
+    });
+
+
+    // ---------------------------------------------------------
+    // 撳餐廳 marker
+    // ---------------------------------------------------------
+
+    marker.addListener("click", () => {
+
+      const distance = userPosition
+        ? distanceMeters(
+            userPosition.lat,
+            userPosition.lng,
+            place.lat,
+            place.lng
+          )
+        : null;
+
+
+      infoWindow.setContent(`
+        <div style="
+          font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+          max-width:240px
+        ">
+
+          <div style="
+            font-weight:800;
+            font-size:15px;
+            margin-bottom:4px
+          ">
+            ${escapeHtml(place.name)}
+          </div>
+
+          <div style="
+            font-size:12px;
+            color:#6b7280;
+            margin-bottom:8px
+          ">
+            ${escapeHtml(place.category)}
+            ·
+            ${formatDistance(distance)}
+            <br>
+            ${escapeHtml(place.address || "")}
+          </div>
+
+          <a
+            href="${directionsUrl(place)}"
+            target="_blank"
+            rel="noopener noreferrer"
+            style="
+              display:inline-block;
+              background:#111827;
+              color:#fff;
+              text-decoration:none;
+              font-weight:800;
+              font-size:12px;
+              padding:7px 9px;
+              border-radius:9px
+            "
+          >
+            步行導航
+          </a>
+
+        </div>
+      `);
+
+
+      infoWindow.open({
+        anchor: marker,
+        map
       });
+
+    });
+
+
+    // 每建立一粒 marker，就加入 array
+    restaurantMarkers.push(marker);
+
+  });
+
+
+  // =========================================================
+  // 2. 完成建立所有 marker 後，先開始 clustering
+  // =========================================================
+
+  if (!restaurantMarkers.length) {
+    return;
+  }
+
+
+  // CDN 意外載入失敗時 fallback
+  if (typeof markerClusterer === "undefined") {
+
+    restaurantMarkers.forEach(marker => {
+      marker.setMap(map);
+    });
+
+    console.warn(
+      "MarkerClusterer 未能載入，使用普通 markers。"
+    );
+
+    return;
+  }
+
+
+  // =========================================================
+  // 3. Cluster 樣式
+  // =========================================================
+
+  const clusterRenderer = {
+
+    render: ({ count, position }) => {
+
+      return new google.maps.Marker({
+
+        position,
+
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 22,
+
+          fillColor: "#111827",
+          fillOpacity: 0.96,
+
+          strokeColor: "#ffffff",
+          strokeOpacity: 1,
+          strokeWeight: 3
+        },
+
+        label: {
+          text: `${count}+`,
+          color: "#ffffff",
+          fontSize: "13px",
+          fontWeight: "800"
+        },
+
+        zIndex: 10000 + count
+      });
+
     }
 
+  };
+
+
+  // =========================================================
+  // 4. Cluster 判定距離
+  // =========================================================
+
+  const algorithm =
+    new markerClusterer.SuperClusterAlgorithm({
+
+      radius: 20,
+
+      maxZoom: 21,
+
+      minPoints: 2
+    });
+
+
+  // =========================================================
+  // 5. 建立 MarkerClusterer
+  // =========================================================
+
+  restaurantClusterer =
+    new markerClusterer.MarkerClusterer({
+
+      map,
+
+      markers: restaurantMarkers,
+
+      algorithm,
+
+      renderer: clusterRenderer
+
+    });
+
+}
+    
     function renderList(items) {
       const rows = items.map(place => {
         let distance = null;
