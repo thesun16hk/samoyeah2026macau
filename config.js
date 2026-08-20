@@ -14,5 +14,5 @@
 // ============================================================
 
 const MAP_CONFIG = {
-  googleMapsApiKey: "PASTE_YOUR_API_KEY_HERE"
+  googleMapsApiKey: "AIzaSyDCvaDWR4fwS8OKG7oMDPzZpB0BUlplG5U"
 };
