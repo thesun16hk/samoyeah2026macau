@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+  <title>澳門食嘢 Map</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  />
+
+  <style>
+    :root {
+      --panel: rgba(255, 255, 255, 0.97);
+      --text: #171717;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --accent: #111827;
+      --sheet-height: 36vh;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+
+    body {
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+        "PingFang HK", "Noto Sans HK", "Helvetica Neue", Arial, sans-serif;
+      color: var(--text);
+      background: #f3f4f6;
+    }
+
+    #map {
+      position: fixed;
+      inset: 0 0 var(--sheet-height) 0;
+      z-index: 1;
+      background: #e5e7eb;
+    }
+
+    .topbar {
+      position: fixed;
+      z-index: 1000;
+      top: max(10px, env(safe-area-inset-top));
+      left: 10px;
+      right: 10px;
+      pointer-events: none;
+    }
+
+    .top-card {
+      pointer-events: auto;
+      background: var(--panel);
+      border: 1px solid rgba(0,0,0,.08);
+      border-radius: 18px;
+      box-shadow: 0 8px 28px rgba(0,0,0,.15);
+      padding: 10px;
+      backdrop-filter: blur(12px);
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 9px;
+    }
+
+    .title {
+      flex: 1;
+      min-width: 0;
+      font-size: 17px;
+      font-weight: 850;
+    }
+
+    .location-status {
+      max-width: 52%;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 1px;
+    }
+
+    .chips::-webkit-scrollbar { display: none; }
+
+    .chip {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: #222;
+      border-radius: 999px;
+      padding: 9px 13px;
+      font-size: 14px;
+      font-weight: 750;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .chip.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .locate-button {
+      position: fixed;
+      z-index: 900;
+      right: 14px;
+      bottom: calc(var(--sheet-height) + 14px);
+      width: 48px;
+      height: 48px;
+      border: 0;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 5px 18px rgba(0,0,0,.2);
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    .sheet {
+      position: fixed;
+      z-index: 800;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: var(--sheet-height);
+      min-height: 235px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--panel);
+      border-top: 1px solid rgba(0,0,0,.08);
+      border-radius: 20px 20px 0 0;
+      box-shadow: 0 -8px 28px rgba(0,0,0,.12);
+      padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    }
+
+    .grabber {
+      width: 38px;
+      height: 5px;
+      flex: 0 0 auto;
+      margin: 0 auto 8px;
+      border-radius: 999px;
+      background: #d1d5db;
+    }
+
+    .sheet-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex: 0 0 auto;
+      margin-bottom: 7px;
+    }
+
+    .sheet-title { font-size: 16px; font-weight: 850; }
+
+    .sheet-hint {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    #results {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 6px;
+    }
+
+    .place-card {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 11px 4px;
+      border-top: 1px solid var(--border);
+    }
+
+    .place-card:first-child { border-top: 0; }
+
+    .place-name {
+      font-size: 15px;
+      font-weight: 850;
+      margin-bottom: 4px;
+    }
+
+    .place-address {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+      margin-bottom: 4px;
+    }
+
+    .place-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .distance {
+      color: #111;
+      font-weight: 850;
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .nav-btn, .maps-btn {
+      display: block;
+      min-width: 76px;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 11px;
+      padding: 8px 9px;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .nav-btn { background: #111827; color: #fff; }
+
+    .maps-btn {
+      background: #f3f4f6;
+      color: #111827;
+      border: 1px solid #e5e7eb;
+    }
+
+    .loading-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+      padding: 3px 4px 7px;
+    }
+
+    .empty {
+      color: var(--muted);
+      text-align: center;
+      padding: 28px 14px;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .user-dot-wrap { position: relative; width: 26px; height: 26px; }
+
+    .user-dot-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: rgba(66, 133, 244, .18);
+      animation: pulse 1.8s ease-out infinite;
+    }
+
+    .user-dot {
+      position: absolute;
+      left: 6px;
+      top: 6px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #4285f4;
+      border: 3px solid #fff;
+      box-shadow: 0 1px 5px rgba(0,0,0,.35);
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(.65); opacity: .95; }
+      100% { transform: scale(1.35); opacity: 0; }
+    }
+
+    .restaurant-pin {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 17px 17px 17px 3px;
+      transform: rotate(-45deg);
+      background: #111827;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
+      color: #fff;
+      font-size: 15px;
+    }
+
+    .restaurant-pin span {
+      transform: rotate(45deg);
+      line-height: 1;
+    }
+
+    .leaflet-popup-content-wrapper { border-radius: 14px; }
+    .popup-name { font-weight: 850; font-size: 14px; margin-bottom: 4px; }
+    .popup-meta { color: #6b7280; font-size: 12px; margin-bottom: 8px; }
+
+    .popup-nav {
+      display: inline-block;
+      background: #111827;
+      color: #fff !important;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 12px;
+      padding: 7px 9px;
+      border-radius: 9px;
+    }
+
+    @media (min-width: 760px) {
+      :root { --sheet-height: 32vh; }
+
+      .topbar {
+        left: 50%;
+        right: auto;
+        width: min(720px, calc(100% - 24px));
+        transform: translateX(-50%);
+      }
+
+      .sheet {
+        left: 50%;
+        width: min(720px, 100%);
+        transform: translateX(-50%);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+
+  <div class="topbar">
+    <div class="top-card">
+      <div class="title-row">
+        <div class="title">🍜 澳門食嘢 Map</div>
+        <div id="locationStatus" class="location-status">準備定位…</div>
+      </div>
+      <div id="chips" class="chips"></div>
+    </div>
+  </div>
+
+  <button id="locateButton" class="locate-button" aria-label="返回我的位置" title="返回我的位置">◎</button>
+
+  <section class="sheet">
+    <div class="grabber"></div>
+    <div class="sheet-head">
+      <div id="sheetTitle" class="sheet-title">全部餐廳</div>
+      <div id="sheetHint" class="sheet-hint">準備餐廳位置…</div>
+    </div>
+    <div id="results"></div>
+  </section>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <!-- 你日後主要只需要改 restaurants.js -->
+  <script src="./restaurants.js"></script>
+
+  <script>
+    const MACAU_CENTER = [22.1987, 113.5439];
+    const GEO_CACHE_KEY = "macau-food-map-geocache-v3";
+
+    if (!Array.isArray(window.restaurants) && typeof restaurants === "undefined") {
+      alert("讀取唔到 restaurants.js，請確認 index.html 同 restaurants.js 放喺同一個資料夾。");
+    }
+
+    const data = typeof restaurants !== "undefined" ? restaurants : window.restaurants;
+
+    const map = L.map("map", {
+      zoomControl: false,
+      attributionControl: true
+    }).setView(MACAU_CENTER, 14);
+
+    L.control.zoom({ position: "bottomleft" }).addTo(map);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const markerLayer = L.layerGroup().addTo(map);
+
+    let activeCategory = "全部";
+    let userPosition = null;
+    let userMarker = null;
+    let accuracyCircle = null;
+    let hasCenteredOnUser = false;
+    let geocodingDone = false;
+    let geocodingCount = 0;
+
+    const chipsEl = document.getElementById("chips");
+    const resultsEl = document.getElementById("results");
+    const sheetTitleEl = document.getElementById("sheetTitle");
+    const sheetHintEl = document.getElementById("sheetHint");
+    const locationStatusEl = document.getElementById("locationStatus");
+    const locateButtonEl = document.getElementById("locateButton");
+
+    function categoryEmoji(category) {
+      const found = data.find(r => r.category === category);
+      return found?.emoji || "🍴";
+    }
+
+    function getGeoCache() {
+      try {
+        return JSON.parse(localStorage.getItem(GEO_CACHE_KEY) || "{}");
+      } catch {
+        return {};
+      }
+    }
+
+    function saveGeoCache(cache) {
+      try {
+        localStorage.setItem(GEO_CACHE_KEY, JSON.stringify(cache));
+      } catch {}
+    }
+
+    function hydrateCachedCoordinates() {
+      const cache = getGeoCache();
+
+      data.forEach(place => {
+        if (Number.isFinite(place.lat) && Number.isFinite(place.lng)) return;
+
+        const saved = cache[place.id];
+        if (saved && Number.isFinite(saved.lat) && Number.isFinite(saved.lng)) {
+          place.lat = saved.lat;
+          place.lng = saved.lng;
+        }
+      });
+    }
+
+    function uniqueCategories() {
+      return [...new Set(data.map(r => r.category).filter(Boolean))];
+    }
+
+    function makeChips() {
+      const cats = ["全部", ...uniqueCategories()];
+      chipsEl.innerHTML = "";
+
+      cats.forEach(cat => {
+        const btn = document.createElement("button");
+        btn.className = "chip" + (cat === activeCategory ? " active" : "");
+        btn.textContent = cat === "全部"
+          ? "🗺️ 全部"
+          : `${categoryEmoji(cat)} ${cat}`;
+
+        btn.addEventListener("click", () => {
+          activeCategory = cat;
+          makeChips();
+          render();
+          fitVisibleRestaurants();
+        });
+
+        chipsEl.appendChild(btn);
+      });
+    }
+
+    function filteredRestaurants() {
+      if (activeCategory === "全部") return [...data];
+      return data.filter(r => r.category === activeCategory);
+    }
+
+    function hasCoords(place) {
+      return Number.isFinite(place.lat) && Number.isFinite(place.lng);
+    }
+
+    function toRad(deg) {
+      return deg * Math.PI / 180;
+    }
+
+    function distanceMeters(lat1, lng1, lat2, lng2) {
+      const R = 6371000;
+      const dLat = toRad(lat2 - lat1);
+      const dLng = toRad(lng2 - lng1);
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(lat1)) *
+        Math.cos(toRad(lat2)) *
+        Math.sin(dLng / 2) ** 2;
+
+      return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function formatDistance(meters) {
+      if (meters == null) return "待定位";
+      if (meters < 1000) return `${Math.round(meters)} m`;
+      return `${(meters / 1000).toFixed(1)} km`;
+    }
+
+    function googleMapsDirectionsUrl(place) {
+      if (!hasCoords(place)) return place.mapsUrl || "#";
+
+      const destination = encodeURIComponent(`${place.lat},${place.lng}`);
+      return `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=walking`;
+    }
+
+    function restaurantIcon(emoji) {
+      return L.divIcon({
+        className: "",
+        html: `<div class="restaurant-pin"><span>${escapeHtml(emoji || "🍴")}</span></div>`,
+        iconSize: [34, 34],
+        iconAnchor: [17, 31],
+        popupAnchor: [0, -29]
+      });
+    }
+
+    function userIcon() {
+      return L.divIcon({
+        className: "",
+        html: `
+          <div class="user-dot-wrap">
+            <div class="user-dot-ring"></div>
+            <div class="user-dot"></div>
+          </div>
+        `,
+        iconSize: [26, 26],
+        iconAnchor: [13, 13]
+      });
+    }
+
+    function renderMarkers(items) {
+      markerLayer.clearLayers();
+
+      items.filter(hasCoords).forEach(place => {
+        const distance = userPosition
+          ? distanceMeters(userPosition.lat, userPosition.lng, place.lat, place.lng)
+          : null;
+
+        const popup = `
+          <div class="popup-name">${escapeHtml(place.name)}</div>
+          <div class="popup-meta">
+            ${escapeHtml(place.category)} · ${formatDistance(distance)}<br>
+            ${escapeHtml(place.address || "")}
+          </div>
+          <a class="popup-nav"
+             href="${googleMapsDirectionsUrl(place)}"
+             target="_blank"
+             rel="noopener noreferrer">步行導航</a>
+        `;
+
+        L.marker([place.lat, place.lng], {
+          icon: restaurantIcon(place.emoji)
+        })
+        .bindPopup(popup)
+        .addTo(markerLayer);
+      });
+    }
+
+    function renderList(items) {
+      const rows = items.map(place => {
+        let distance = null;
+
+        if (userPosition && hasCoords(place)) {
+          distance = distanceMeters(
+            userPosition.lat,
+            userPosition.lng,
+            place.lat,
+            place.lng
+          );
+        }
+
+        return { ...place, distance };
+      });
+
+      rows.sort((a, b) => {
+        if (a.distance != null && b.distance != null) return a.distance - b.distance;
+        if (hasCoords(a) && !hasCoords(b)) return -1;
+        if (!hasCoords(a) && hasCoords(b)) return 1;
+        return 0;
+      });
+
+      sheetTitleEl.textContent = activeCategory === "全部"
+        ? `全部餐廳 (${rows.length})`
+        : `${activeCategory} (${rows.length})`;
+
+      if (!geocodingDone) {
+        sheetHintEl.textContent = `餐廳位置 ${geocodingCount}/${data.length}`;
+      } else if (userPosition) {
+        sheetHintEl.textContent = "由近到遠 · 直線距離";
+      } else {
+        sheetHintEl.textContent = "餐廳位置已準備";
+      }
+
+      if (!rows.length) {
+        resultsEl.innerHTML = `<div class="empty">呢個分類暫時未有餐廳。</div>`;
+        return;
+      }
+
+      const loading = !geocodingDone
+        ? `<div class="loading-note">第一次開啟會逐間確認未有座標嘅餐廳；成功後會存在你部手機。</div>`
+        : "";
+
+      resultsEl.innerHTML = loading + rows.map(place => {
+        const locText = hasCoords(place)
+          ? (place.distance != null ? formatDistance(place.distance) : "已定位餐廳")
+          : "正在確認位置…";
+
+        return `
+          <div class="place-card"
+               data-lat="${hasCoords(place) ? place.lat : ""}"
+               data-lng="${hasCoords(place) ? place.lng : ""}">
+
+            <div>
+              <div class="place-name">${escapeHtml(place.emoji || "🍴")} ${escapeHtml(place.name)}</div>
+              <div class="place-address">${escapeHtml(place.address || "")}</div>
+              <div class="place-meta">
+                <span>${escapeHtml(place.category)}</span>
+                <span>·</span>
+                <span class="distance">${locText}</span>
+              </div>
+            </div>
+
+            <div class="actions">
+              <a class="nav-btn"
+                 href="${googleMapsDirectionsUrl(place)}"
+                 target="_blank"
+                 rel="noopener noreferrer">導航 ↗</a>
+
+              <a class="maps-btn"
+                 href="${escapeHtml(place.mapsUrl || "#")}"
+                 target="_blank"
+                 rel="noopener noreferrer">原 Maps</a>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      resultsEl.querySelectorAll(".place-card").forEach(card => {
+        card.addEventListener("click", event => {
+          if (event.target.closest("a")) return;
+
+          const latText = card.dataset.lat;
+          const lngText = card.dataset.lng;
+
+          if (!latText || !lngText) return;
+
+          const lat = Number(latText);
+          const lng = Number(lngText);
+
+          if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            map.setView([lat, lng], Math.max(map.getZoom(), 16), { animate: true });
+          }
+        });
+      });
+    }
+
+    function render() {
+      const items = filteredRestaurants();
+      renderMarkers(items);
+      renderList(items);
+    }
+
+    function fitVisibleRestaurants() {
+      const items = filteredRestaurants().filter(hasCoords);
+      if (!items.length) return;
+
+      const points = items.map(r => [r.lat, r.lng]);
+
+      if (userPosition) {
+        points.push([userPosition.lat, userPosition.lng]);
+      }
+
+      if (points.length === 1) {
+        map.setView(points[0], 16, { animate: true });
+        return;
+      }
+
+      map.fitBounds(L.latLngBounds(points), {
+        paddingTopLeft: [35, 115],
+        paddingBottomRight: [35, 35],
+        maxZoom: 16,
+        animate: true
+      });
+    }
+
+    function updateUserLocation(position) {
+      const { latitude, longitude, accuracy } = position.coords;
+      userPosition = { lat: latitude, lng: longitude };
+
+      locationStatusEl.textContent = accuracy
+        ? `已定位 · ±${Math.round(accuracy)}m`
+        : "已定位";
+
+      if (!userMarker) {
+        userMarker = L.marker([latitude, longitude], {
+          icon: userIcon(),
+          zIndexOffset: 1000,
+          interactive: false
+        }).addTo(map);
+      } else {
+        userMarker.setLatLng([latitude, longitude]);
+      }
+
+      if (!accuracyCircle) {
+        accuracyCircle = L.circle([latitude, longitude], {
+          radius: accuracy || 0,
+          weight: 1,
+          opacity: 0.25,
+          fillOpacity: 0.05
+        }).addTo(map);
+      } else {
+        accuracyCircle.setLatLng([latitude, longitude]);
+        accuracyCircle.setRadius(accuracy || 0);
+      }
+
+      if (!hasCenteredOnUser) {
+        map.setView([latitude, longitude], 16, { animate: true });
+        hasCenteredOnUser = true;
+      }
+
+      render();
+    }
+
+    function locationError(error) {
+      const messages = {
+        1: "未允許定位",
+        2: "暫時搵唔到位置",
+        3: "定位逾時"
+      };
+
+      locationStatusEl.textContent = messages[error.code] || "定位失敗";
+
+      if (geocodingDone) {
+        sheetHintEl.textContent = "可照常瀏覽餐廳";
+      }
+
+      if (!hasCenteredOnUser) {
+        fitVisibleRestaurants();
+      }
+    }
+
+    function startLocation() {
+      if (!("geolocation" in navigator)) {
+        locationStatusEl.textContent = "瀏覽器不支援定位";
+        return;
+      }
+
+      locationStatusEl.textContent = "正在定位…";
+
+      navigator.geolocation.watchPosition(
+        updateUserLocation,
+        locationError,
+        {
+          enableHighAccuracy: true,
+          timeout: 12000,
+          maximumAge: 5000
+        }
+      );
+    }
+
+    async function fetchJsonWithTimeout(url, timeoutMs = 8000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+      try {
+        const response = await fetch(url, {
+          headers: { "Accept": "application/json" },
+          signal: controller.signal
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function geocodeWithNominatim(place) {
+      const queryText = place.geocodeQuery || `${place.name} ${place.address || ""} 澳門`;
+      const query = encodeURIComponent(queryText);
+
+      const url =
+        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1` +
+        `&countrycodes=mo&accept-language=zh-HK&q=${query}`;
+
+      try {
+        const results = await fetchJsonWithTimeout(url);
+
+        if (Array.isArray(results) && results.length) {
+          const lat = Number(results[0].lat);
+          const lng = Number(results[0].lon);
+
+          if (isMacauCoordinate(lat, lng)) {
+            return { lat, lng };
+          }
+        }
+      } catch {}
+
+      return null;
+    }
+
+    async function geocodeWithPhoton(place) {
+      const queryText = place.geocodeQuery || `${place.name} ${place.address || ""} 澳門`;
+      const query = encodeURIComponent(queryText);
+      const url = `https://photon.komoot.io/api/?limit=1&q=${query}`;
+
+      try {
+        const result = await fetchJsonWithTimeout(url);
+        const coords = result?.features?.[0]?.geometry?.coordinates;
+
+        if (Array.isArray(coords) && coords.length >= 2) {
+          const lng = Number(coords[0]);
+          const lat = Number(coords[1]);
+
+          if (isMacauCoordinate(lat, lng)) {
+            return { lat, lng };
+          }
+        }
+      } catch {}
+
+      return null;
+    }
+
+    function isMacauCoordinate(lat, lng) {
+      return (
+        Number.isFinite(lat) &&
+        Number.isFinite(lng) &&
+        lat >= 22.05 && lat <= 22.25 &&
+        lng >= 113.45 && lng <= 113.65
+      );
+    }
+
+    async function resolveRestaurantLocations() {
+      hydrateCachedCoordinates();
+
+      const cache = getGeoCache();
+
+      geocodingCount = data.filter(hasCoords).length;
+      render();
+
+      const pending = data.filter(place => !hasCoords(place));
+
+      for (const place of pending) {
+        let result = await geocodeWithNominatim(place);
+
+        if (!result) {
+          result = await geocodeWithPhoton(place);
+        }
+
+        if (result) {
+          place.lat = result.lat;
+          place.lng = result.lng;
+          cache[place.id] = result;
+          saveGeoCache(cache);
+        }
+
+        geocodingCount = data.filter(hasCoords).length;
+        render();
+
+        await sleep(1100);
+      }
+
+      geocodingDone = true;
+      render();
+      fitVisibleRestaurants();
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    locateButtonEl.addEventListener("click", () => {
+      if (userPosition) {
+        map.setView([userPosition.lat, userPosition.lng], 17, { animate: true });
+      } else {
+        startLocation();
+      }
+    });
+
+    function escapeHtml(text) {
+      return String(text ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    hydrateCachedCoordinates();
+    makeChips();
+    render();
+    fitVisibleRestaurants();
+    startLocation();
+    resolveRestaurantLocations();
+
+    window.addEventListener("resize", () => {
+      setTimeout(() => map.invalidateSize(), 150);
+    });
+  </script>
+</body>
+</html>
