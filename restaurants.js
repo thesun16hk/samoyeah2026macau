@@ -137,8 +137,20 @@ lng: 113.539222
     mapsUrl: "https://maps.app.goo.gl/gvF97SUq4uWP69meA?g_st=ic",
     lat: 22.196169,
 lng: 113.539877
+  },
+  
+  // 🎰 賭場免費珍奶
+  {
+    id: "mgm-macau",
+    name: "澳門美高梅娛樂場",
+    category: "賭場免費珍奶",
+    emoji: "🎰",
+    address: "澳門外港新填海區孫逸仙大馬路1101號 澳門美高梅",
+    geocodeQuery: "MGM Macau Casino 澳門美高梅娛樂場",
+    mapsUrl: "https://www.google.com/maps/search/?api=1&query=MGM%20Macau%20Casino&query_place_id=ChIJfQD_Aup6ATQRQF5o0Hl6UGM",
+    lat: 22.185810,
+    lng: 113.547880
   }
-
 ];
 
 
