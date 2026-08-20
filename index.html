@@ -577,6 +577,429 @@ function setupBottomSheet() {
 });
 
 }
+    function setupOneHandZoom() {
+  const mapContainer = document.getElementById("map-container");
+
+  if (!mapContainer || !map) return;
+
+  // 第二下 tap 要喺幾耐之內發生
+  const DOUBLE_TAP_TIME = 360;
+
+  // 第二下 tap 同第一下最多相距幾多 px
+  const DOUBLE_TAP_DISTANCE = 42;
+
+  // 第二下按住後，移動幾多 px 先正式當成 zoom
+  const DRAG_THRESHOLD = 6;
+
+  // 手指上下移動約 105px = 1 個 zoom level
+  const PIXELS_PER_ZOOM = 105;
+
+  let lastTap = null;
+  let pointerState = null;
+  let zoomGesture = null;
+
+  let zoomFrame = null;
+  let pendingZoom = null;
+
+  // 用嚟避免同雙指 pinch zoom 打交
+  const activeTouches = new Set();
+
+
+  function distance(x1, y1, x2, y2) {
+    return Math.hypot(
+      x2 - x1,
+      y2 - y1
+    );
+  }
+
+
+  function getZoomLimits() {
+    const configuredMin = Number(map.get("minZoom"));
+    const configuredMax = Number(map.get("maxZoom"));
+
+    return {
+      min: Number.isFinite(configuredMin)
+        ? configuredMin
+        : 3,
+
+      max: Number.isFinite(configuredMax)
+        ? configuredMax
+        : 21
+    };
+  }
+
+
+  function clampZoom(zoom) {
+    const limits = getZoomLimits();
+
+    return Math.max(
+      limits.min,
+      Math.min(limits.max, zoom)
+    );
+  }
+
+
+  function scheduleZoom(zoom) {
+    pendingZoom = clampZoom(zoom);
+
+    if (zoomFrame !== null) return;
+
+    zoomFrame = requestAnimationFrame(() => {
+      zoomFrame = null;
+
+      if (
+        map &&
+        pendingZoom !== null
+      ) {
+        map.setZoom(pendingZoom);
+      }
+    });
+  }
+
+
+  function restoreNormalMapGestures() {
+    if (!map) return;
+
+    map.setOptions({
+      gestureHandling: "greedy"
+    });
+  }
+
+
+  function cancelZoomGesture() {
+    if (!zoomGesture) return;
+
+    try {
+      mapContainer.releasePointerCapture(
+        zoomGesture.pointerId
+      );
+    } catch {}
+
+    zoomGesture = null;
+
+    if (zoomFrame !== null) {
+      cancelAnimationFrame(zoomFrame);
+      zoomFrame = null;
+    }
+
+    pendingZoom = null;
+
+    restoreNormalMapGestures();
+  }
+
+
+  mapContainer.addEventListener(
+    "pointerdown",
+    event => {
+      if (
+        event.pointerType !== "touch" ||
+        !map
+      ) {
+        return;
+      }
+
+      activeTouches.add(event.pointerId);
+
+      /*
+       * 如果有第二隻手指同時落地圖，
+       * 代表用家可能想 pinch zoom。
+       * 唔啟動單手 zoom。
+       */
+      if (activeTouches.size > 1) {
+        lastTap = null;
+        pointerState = null;
+
+        cancelZoomGesture();
+
+        return;
+      }
+
+      const now = performance.now();
+
+      if (
+        lastTap &&
+        now - lastTap.time > DOUBLE_TAP_TIME
+      ) {
+        lastTap = null;
+      }
+
+      const isSecondTap =
+        lastTap &&
+        now - lastTap.time <= DOUBLE_TAP_TIME &&
+        distance(
+          lastTap.x,
+          lastTap.y,
+          event.clientX,
+          event.clientY
+        ) <= DOUBLE_TAP_DISTANCE;
+
+
+      pointerState = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        startTime: now,
+        moved: false
+      };
+
+
+      // 普通第一下 tap
+      if (!isSecondTap) {
+        return;
+      }
+
+
+      /*
+       * 第二下 tap 已經命中：
+       * 開始準備單手 zoom。
+       */
+      lastTap = null;
+
+      zoomGesture = {
+        pointerId: event.pointerId,
+        startY: event.clientY,
+        startZoom: map.getZoom() ?? 14,
+        moved: false
+      };
+
+
+      /*
+       * 暫時停止 Google Maps 自己嘅 pan，
+       * 否則向上下拖時地圖會同時移動。
+       */
+      map.setOptions({
+        gestureHandling: "none"
+      });
+
+
+      try {
+        mapContainer.setPointerCapture(
+          event.pointerId
+        );
+      } catch {}
+
+
+      event.preventDefault();
+      event.stopPropagation();
+    },
+    {
+      capture: true,
+      passive: false
+    }
+  );
+
+
+  mapContainer.addEventListener(
+    "pointermove",
+    event => {
+      if (event.pointerType !== "touch") {
+        return;
+      }
+
+
+      if (
+        pointerState &&
+        event.pointerId === pointerState.pointerId
+      ) {
+        const movedDistance = distance(
+          pointerState.startX,
+          pointerState.startY,
+          event.clientX,
+          event.clientY
+        );
+
+        if (movedDistance > 10) {
+          pointerState.moved = true;
+        }
+      }
+
+
+      if (
+        !zoomGesture ||
+        event.pointerId !== zoomGesture.pointerId
+      ) {
+        return;
+      }
+
+
+      /*
+       * 有第二隻手指：
+       * 放棄單手 zoom，交返俾原生 pinch。
+       */
+      if (activeTouches.size > 1) {
+        cancelZoomGesture();
+        return;
+      }
+
+
+      const deltaY =
+        event.clientY - zoomGesture.startY;
+
+
+      if (
+        Math.abs(deltaY) >= DRAG_THRESHOLD
+      ) {
+        zoomGesture.moved = true;
+      }
+
+
+      if (!zoomGesture.moved) {
+        return;
+      }
+
+
+      event.preventDefault();
+      event.stopPropagation();
+
+
+      /*
+       * Google Maps App 式方向：
+       *
+       * 手指向下 ↓ = 放大
+       * 手指向上 ↑ = 縮小
+       */
+      const nextZoom =
+        zoomGesture.startZoom +
+        deltaY / PIXELS_PER_ZOOM;
+
+
+      scheduleZoom(nextZoom);
+    },
+    {
+      capture: true,
+      passive: false
+    }
+  );
+
+
+  function finishPointer(event, cancelled = false) {
+    activeTouches.delete(event.pointerId);
+
+
+    /*
+     * 正在做單手 zoom
+     */
+    if (
+      zoomGesture &&
+      event.pointerId === zoomGesture.pointerId
+    ) {
+      const startZoom = zoomGesture.startZoom;
+      const moved = zoomGesture.moved;
+
+      zoomGesture = null;
+      pointerState = null;
+      lastTap = null;
+
+
+      if (zoomFrame !== null) {
+        cancelAnimationFrame(zoomFrame);
+        zoomFrame = null;
+      }
+
+
+      if (
+        pendingZoom !== null &&
+        map
+      ) {
+        map.setZoom(
+          clampZoom(pendingZoom)
+        );
+      }
+
+      pendingZoom = null;
+
+
+      restoreNormalMapGestures();
+
+
+      try {
+        mapContainer.releasePointerCapture(
+          event.pointerId
+        );
+      } catch {}
+
+
+      /*
+       * 如果係普通 double tap，
+       * 第二下冇上下拖：
+       *
+       * 放大一級。
+       */
+      if (
+        !cancelled &&
+        !moved &&
+        map
+      ) {
+        map.setZoom(
+          clampZoom(startZoom + 1)
+        );
+      }
+
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      return;
+    }
+
+
+    /*
+     * 普通第一下 tap 完成：
+     * 記錄佢，等第二下。
+     */
+    if (
+      pointerState &&
+      event.pointerId === pointerState.pointerId
+    ) {
+      const tapDuration =
+        performance.now() -
+        pointerState.startTime;
+
+
+      if (
+        !cancelled &&
+        !pointerState.moved &&
+        tapDuration < 300 &&
+        activeTouches.size === 0
+      ) {
+        lastTap = {
+          time: performance.now(),
+          x: event.clientX,
+          y: event.clientY
+        };
+      } else {
+        lastTap = null;
+      }
+
+
+      pointerState = null;
+    }
+  }
+
+
+  mapContainer.addEventListener(
+    "pointerup",
+    event => {
+      finishPointer(event);
+    },
+    {
+      capture: true,
+      passive: false
+    }
+  );
+
+
+  mapContainer.addEventListener(
+    "pointercancel",
+    event => {
+      finishPointer(event, true);
+    },
+    {
+      capture: true,
+      passive: false
+    }
+  );
+}
     function showFatal(message) {
       const card = document.createElement("div");
       card.className = "error-card";
@@ -1045,6 +1468,7 @@ function setupBottomSheet() {
   clickableIcons: false,
 
   gestureHandling: "greedy",
+  isFractionalZoomEnabled: true,
   renderingType: google.maps.RenderingType.RASTER,
 
   styles: [
@@ -1059,6 +1483,7 @@ function setupBottomSheet() {
     }
   ]
 });
+        setupOneHandZoom();
         geocoder = new Geocoder();
         infoWindow = new google.maps.InfoWindow();
 
