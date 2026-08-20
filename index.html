@@ -1811,6 +1811,14 @@ function renderMarkers(items) {
         setupOneHandZoom();
         geocoder = new Geocoder();
         infoWindow = new google.maps.InfoWindow();
+        
+        map.addListener("click", () => {
+  infoWindow.close();
+});
+
+        map.addListener("dragstart", () => {
+  infoWindow.close();
+});
 
         // 如果底圖成功完成第一次 tiles load，就代表 Google Maps rendering 正常。
         let tilesLoaded = false;
