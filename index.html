@@ -150,7 +150,7 @@
       right: 0;
       bottom: 0;
       height: var(--sheet-height);
-      min-height: 235px;
+      min-height: 0;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -159,16 +159,45 @@
       border-radius: 20px 20px 0 0;
       box-shadow: 0 -8px 28px rgba(0,0,0,.12);
       padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+      transition: height 220ms cubic-bezier(.2,.8,.2,1);
     }
 
     .grabber {
-      width: 38px;
-      height: 5px;
-      flex: 0 0 auto;
-      margin: 0 auto 8px;
-      border-radius: 999px;
-      background: #d1d5db;
-    }
+  position: relative;
+  width: 100%;
+  height: 28px;
+  flex: 0 0 28px;
+  margin: -5px 0 2px;
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.grabber::before {
+  content: "";
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  width: 38px;
+  height: 5px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: #d1d5db;
+}
+    #map-container {
+  transition: bottom 220ms cubic-bezier(.2,.8,.2,1);
+}
+
+.locate-button {
+  transition: bottom 220ms cubic-bezier(.2,.8,.2,1);
+}
+
+body.sheet-dragging .sheet,
+body.sheet-dragging #map-container,
+body.sheet-dragging .locate-button {
+  transition: none;
+}
 
     .sheet-head {
       display: flex;
@@ -337,7 +366,12 @@
   <button id="locateButton" class="locate-button" aria-label="返回我的位置">◎</button>
 
   <section class="sheet">
-    <div class="grabber"></div>
+<div
+  id="sheetGrabber"
+  class="grabber"
+  role="button"
+  aria-label="拉高或拉低餐廳列表"
+></div>
     <div class="sheet-head">
       <div id="sheetTitle" class="sheet-title">全部餐廳</div>
       <div id="sheetHint" class="sheet-hint">準備 Google Maps…</div>
@@ -370,7 +404,179 @@
     const sheetHintEl = document.getElementById("sheetHint");
     const locationStatusEl = document.getElementById("locationStatus");
     const locateButtonEl = document.getElementById("locateButton");
+const sheetEl = document.querySelector(".sheet");
+const sheetGrabberEl = document.getElementById("sheetGrabber");
 
+function setupBottomSheet() {
+  let sheetMinHeight = 150;
+  let sheetMaxHeight = 0;
+  let sheetCurrentHeight = 0;
+  let sheetExpanded = true;
+
+  let dragState = null;
+
+  function calculateBounds() {
+    const viewportHeight = window.innerHeight;
+
+    // 拉低後約 150px；細機稍為再縮少少。
+    sheetMinHeight = Math.max(
+      140,
+      Math.min(160, Math.round(viewportHeight * 0.18))
+    );
+
+    // 最高保持你目前嘅高度：
+    // 手機 36vh、desktop 32vh。
+    const maxRatio = window.innerWidth >= 760 ? 0.32 : 0.36;
+
+    sheetMaxHeight = Math.max(
+      235,
+      Math.round(viewportHeight * maxRatio)
+    );
+  }
+
+  function setSheetHeight(height) {
+    sheetCurrentHeight = Math.max(
+      sheetMinHeight,
+      Math.min(sheetMaxHeight, height)
+    );
+
+    document.documentElement.style.setProperty(
+      "--sheet-height",
+      `${sheetCurrentHeight}px`
+    );
+  }
+
+  function snapSheet(expanded) {
+    sheetExpanded = expanded;
+    document.body.classList.remove("sheet-dragging");
+
+    setSheetHeight(
+      sheetExpanded
+        ? sheetMaxHeight
+        : sheetMinHeight
+    );
+
+    // Sheet 改變後俾 Google Maps 重新確認尺寸。
+    setTimeout(() => {
+      if (!map || typeof google === "undefined") return;
+
+      const center = map.getCenter();
+
+      google.maps.event.trigger(map, "resize");
+
+      if (center) {
+        map.setCenter(center);
+      }
+    }, 230);
+  }
+
+  calculateBounds();
+  setSheetHeight(sheetMaxHeight);
+
+  sheetGrabberEl.addEventListener("pointerdown", event => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+
+    event.preventDefault();
+
+    dragState = {
+      pointerId: event.pointerId,
+      startY: event.clientY,
+      startHeight: sheetCurrentHeight,
+      moved: false
+    };
+
+    document.body.classList.add("sheet-dragging");
+
+    try {
+      sheetGrabberEl.setPointerCapture(event.pointerId);
+    } catch {}
+  });
+
+  sheetGrabberEl.addEventListener("pointermove", event => {
+    if (
+      !dragState ||
+      event.pointerId !== dragState.pointerId
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const movement =
+      dragState.startY - event.clientY;
+
+    if (Math.abs(movement) > 4) {
+      dragState.moved = true;
+    }
+
+    setSheetHeight(
+      dragState.startHeight + movement
+    );
+  });
+
+  function finishDrag(event, cancelled = false) {
+    if (
+      !dragState ||
+      event.pointerId !== dragState.pointerId
+    ) {
+      return;
+    }
+
+    const moved = dragState.moved;
+
+    dragState = null;
+
+    try {
+      sheetGrabberEl.releasePointerCapture(event.pointerId);
+    } catch {}
+
+    // 如果只係撳一下條 grabber，直接切換高／低。
+    if (!cancelled && !moved) {
+      snapSheet(!sheetExpanded);
+      return;
+    }
+
+    // 拖完之後，自動吸去最近嘅位置。
+    const midpoint =
+      (sheetMinHeight + sheetMaxHeight) / 2;
+
+    snapSheet(sheetCurrentHeight >= midpoint);
+  }
+
+  sheetGrabberEl.addEventListener(
+    "pointerup",
+    event => finishDrag(event)
+  );
+
+  sheetGrabberEl.addEventListener(
+    "pointercancel",
+    event => finishDrag(event, true)
+  );
+
+  // 旋轉手機時重新計算。
+  window.addEventListener("orientationchange", () => {
+    setTimeout(() => {
+      calculateBounds();
+
+      setSheetHeight(
+        sheetExpanded
+          ? sheetMaxHeight
+          : sheetMinHeight
+      );
+    }, 250);
+  });
+
+  window.addEventListener("resize", () => {
+  calculateBounds();
+
+  setSheetHeight(
+    sheetExpanded
+      ? sheetMaxHeight
+      : sheetMinHeight
+  );
+});
+
+}
     function showFatal(message) {
       const card = document.createElement("div");
       card.className = "error-card";
@@ -919,7 +1125,8 @@
       document.head.appendChild(script);
     }
 
-    loadGoogleMaps();
+setupBottomSheet();
+loadGoogleMaps();
   </script>
 </body>
 </html>
