@@ -142,7 +142,40 @@
       font-size: 22px;
       cursor: pointer;
     }
+    .expand-map-button {
+  position: fixed;
+  z-index: 900;
 
+  right: 70px;
+  bottom: calc(var(--sheet-height) + 14px);
+
+  width: 48px;
+  height: 48px;
+
+  display: grid;
+  place-items: center;
+
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+
+  color: #111827;
+  font-size: 22px;
+  font-weight: 700;
+
+  box-shadow: 0 5px 18px rgba(0,0,0,.2);
+
+  cursor: pointer;
+
+  transition:
+    bottom 220ms cubic-bezier(.2,.8,.2,1),
+    transform 120ms ease;
+}
+
+.expand-map-button:active {
+  transform: scale(.94);
+}
+    
     .sheet {
       position: fixed;
       z-index: 800;
@@ -195,10 +228,11 @@
 
 body.sheet-dragging .sheet,
 body.sheet-dragging #map-container,
-body.sheet-dragging .locate-button {
+body.sheet-dragging .locate-button,
+body.sheet-dragging .expand-map-button {
   transition: none;
 }
-
+    
     .sheet-head {
       display: flex;
       align-items: center;
@@ -363,7 +397,14 @@ body.sheet-dragging .locate-button {
     </div>
   </div>
 
-  <button id="locateButton" class="locate-button" aria-label="返回我的位置">◎</button>
+  <button
+  id="expandMapButton"
+  class="expand-map-button"
+  aria-label="放大地圖"
+  title="放大地圖"
+>⤢</button>
+  
+  <button id="locateButton" class="locate-button" aria-label="返回我的位置">📍</button>
 
   <section class="sheet">
 <div
@@ -404,9 +445,13 @@ body.sheet-dragging .locate-button {
     const sheetHintEl = document.getElementById("sheetHint");
     const locationStatusEl = document.getElementById("locationStatus");
     const locateButtonEl = document.getElementById("locateButton");
+    const expandMapButtonEl = document.getElementById("expandMapButton");
+    
 const sheetEl = document.querySelector(".sheet");
 const sheetGrabberEl = document.getElementById("sheetGrabber");
 
+    let collapseBottomSheet = () => {};
+    
 function setupBottomSheet() {
   let sheetMinHeight = 150;
   let sheetMaxHeight = 0;
@@ -426,8 +471,8 @@ function setupBottomSheet() {
 
     // 最高保持你目前嘅高度：
     // 手機 36vh、desktop 32vh。
-    const maxRatio = window.innerWidth >= 760 ? 0.32 : 0.36;
-
+const maxRatio = window.innerWidth >= 760 ? 0.45 : 0.60;
+    
     sheetMaxHeight = Math.max(
       235,
       Math.round(viewportHeight * maxRatio)
@@ -447,28 +492,34 @@ function setupBottomSheet() {
   }
 
   function snapSheet(expanded) {
-    sheetExpanded = expanded;
-    document.body.classList.remove("sheet-dragging");
+  sheetExpanded = expanded;
 
-    setSheetHeight(
-      sheetExpanded
-        ? sheetMaxHeight
-        : sheetMinHeight
-    );
+  document.body.classList.remove("sheet-dragging");
 
-    // Sheet 改變後俾 Google Maps 重新確認尺寸。
-    setTimeout(() => {
-      if (!map || typeof google === "undefined") return;
+  setSheetHeight(
+    sheetExpanded
+      ? sheetMaxHeight
+      : sheetMinHeight
+  );
 
-      const center = map.getCenter();
+  // Sheet 改變後俾 Google Maps 重新確認尺寸。
+  setTimeout(() => {
+    if (!map || typeof google === "undefined") return;
 
-      google.maps.event.trigger(map, "resize");
+    const center = map.getCenter();
 
-      if (center) {
-        map.setCenter(center);
-      }
-    }, 230);
-  }
+    google.maps.event.trigger(map, "resize");
+
+    if (center) {
+      map.setCenter(center);
+    }
+  }, 230);
+}
+
+collapseBottomSheet = () => {
+  snapSheet(false);
+};
+  
 
   calculateBounds();
   setSheetHeight(sheetMaxHeight);
@@ -1479,6 +1530,10 @@ map.moveCamera({
         startLocation();
       }
     });
+
+    expandMapButtonEl.addEventListener("click", () => {
+  collapseBottomSheet();
+});
 
     // Google Maps API authentication failure callback.
     window.gm_authFailure = function() {
