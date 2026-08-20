@@ -575,10 +575,12 @@
                  target="_blank"
                  rel="noopener noreferrer">導航 ↗</a>
 
-              <a class="maps-btn"
-                 href="${escapeHtml(place.mapsUrl || "#")}"
-                 target="_blank"
-                 rel="noopener noreferrer">原 Maps</a>
+              ${place.openRiceUrl ? `
+  <a class="maps-btn"
+     href="${escapeHtml(place.openRiceUrl)}"
+     target="_blank"
+     rel="noopener noreferrer">OpenRice</a>
+` : ""}
             </div>
           </div>
         `;
