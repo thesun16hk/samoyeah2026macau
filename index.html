@@ -122,30 +122,49 @@
 }
 
 .category-toggle-button {
-  flex: 0 0 46px;
-  width: 46px;
-  height: 46px;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 40px;
 
   display: grid;
   place-items: center;
 
-  border: 1px solid #e5e7eb;
-  border-radius: 50%;
+  border: 1px solid var(--border);
+  border-radius: 999px;
 
   background: #fff;
   color: #111827;
 
-  font-size: 25px;
-  font-weight: 700;
-  line-height: 1;
-
+  padding: 0;
   cursor: pointer;
 
-  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  box-shadow: none;
 
   transition:
     transform 180ms ease,
     background 180ms ease;
+}
+
+    .category-toggle-button::before {
+  content: "";
+
+  width: 11px;
+  height: 11px;
+
+  border-right: 3px solid #111827;
+  border-bottom: 3px solid #111827;
+
+  transform:
+    translateY(-3px)
+    rotate(45deg);
+
+  transition: transform 180ms ease;
+}
+
+    .category-row.expanded .category-toggle-button::before {
+  transform:
+    translateY(3px)
+    rotate(225deg);
 }
 
 .category-toggle-button:active {
@@ -448,13 +467,13 @@ body.sheet-dragging .expand-map-button {
 
   <div id="chips" class="chips"></div>
 
-  <button
-    id="categoryToggleButton"
-    class="category-toggle-button"
-    type="button"
-    aria-label="展開所有分類"
-    aria-expanded="false"
-  >⌄</button>
+<button
+  id="categoryToggleButton"
+  class="category-toggle-button"
+  type="button"
+  aria-label="展開所有分類"
+  aria-expanded="false"
+></button>
 
 </div>
     </div>
@@ -1835,8 +1854,6 @@ function renderMarkers(items) {
   const isExpanded =
     categoryRowEl.classList.toggle("expanded");
 
-  categoryToggleButtonEl.textContent =
-    isExpanded ? "⌃" : "⌄";
 
   categoryToggleButtonEl.setAttribute(
     "aria-expanded",
