@@ -101,13 +101,64 @@
   text-overflow: ellipsis;
 }
 
-    .chips {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      scrollbar-width: none;
-      padding-bottom: 1px;
-    }
+.chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 1px;
+}
+
+.category-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.category-row .chips {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.category-toggle-button {
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+
+  background: #fff;
+  color: #111827;
+
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1;
+
+  cursor: pointer;
+
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+
+  transition:
+    transform 180ms ease,
+    background 180ms ease;
+}
+
+.category-toggle-button:active {
+  transform: scale(.94);
+}
+
+/* 展開後：所有 category 自動換行 */
+.category-row.expanded .chips {
+  flex-wrap: wrap;
+  overflow-x: visible;
+  white-space: normal;
+}
+    
     .chips::-webkit-scrollbar { display: none; }
 
     .chip {
@@ -393,7 +444,19 @@ body.sheet-dragging .expand-map-button {
 
   <div id="locationStatus" class="location-status">準備定位…</div>
 </div>
-      <div id="chips" class="chips"></div>
+<div id="categoryRow" class="category-row">
+
+  <div id="chips" class="chips"></div>
+
+  <button
+    id="categoryToggleButton"
+    class="category-toggle-button"
+    type="button"
+    aria-label="展開所有分類"
+    aria-expanded="false"
+  >⌄</button>
+
+</div>
     </div>
   </div>
 
@@ -444,6 +507,10 @@ let restaurantClusterer = null;
     let geocodingCount = 0;
 
     const chipsEl = document.getElementById("chips");
+    
+    const categoryRowEl = document.getElementById("categoryRow");
+const categoryToggleButtonEl = document.getElementById("categoryToggleButton");
+    
     const resultsEl = document.getElementById("results");
     const sheetTitleEl = document.getElementById("sheetTitle");
     const sheetHintEl = document.getElementById("sheetHint");
@@ -1763,6 +1830,27 @@ function renderMarkers(items) {
       }
     });
 
+
+    categoryToggleButtonEl.addEventListener("click", () => {
+  const isExpanded =
+    categoryRowEl.classList.toggle("expanded");
+
+  categoryToggleButtonEl.textContent =
+    isExpanded ? "⌃" : "⌄";
+
+  categoryToggleButtonEl.setAttribute(
+    "aria-expanded",
+    String(isExpanded)
+  );
+
+  categoryToggleButtonEl.setAttribute(
+    "aria-label",
+    isExpanded
+      ? "收起分類"
+      : "展開所有分類"
+  );
+});
+    
     expandMapButtonEl.addEventListener("click", () => {
   toggleBottomSheet();
 });
