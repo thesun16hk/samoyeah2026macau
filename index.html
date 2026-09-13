@@ -1730,7 +1730,7 @@ function renderMarkers(items) {
         hasCenteredOnUser = true;
       }
 
-      render();
+renderList(filteredRestaurants());
     }
 
     function locationError(error) {
@@ -1808,23 +1808,35 @@ function renderMarkers(items) {
     }
 
     async function resolveRestaurantLocations() {
-      geocodingCount = restaurants.filter(hasCoords).length;
-      render();
+  geocodingCount = restaurants.filter(hasCoords).length;
 
-      const pending = restaurants.filter(place => !hasCoords(place));
+  // 開始時畫一次
+  render();
 
-      for (const place of pending) {
-        await geocodePlace(place);
-        geocodingCount = restaurants.filter(hasCoords).length;
-        render();
+  const pending =
+    restaurants.filter(place => !hasCoords(place));
 
-        // 稍為分散請求，避免一次過太密集。
-        await sleep(250);
-      }
+  for (const place of pending) {
+    await geocodePlace(place);
 
-      geocodingDone = true;
-      render();
-      fitVisibleRestaurants();
+    geocodingCount =
+      restaurants.filter(hasCoords).length;
+
+    // 只更新下面餐廳 list / 進度
+    // 唔重新建立所有 map pins
+    renderList(filteredRestaurants());
+
+    // 稍為分散 Geocoding requests
+    await sleep(250);
+  }
+
+  geocodingDone = true;
+
+  // 全部地址處理完成後，
+  // 最後先一次過重新建立所有 pins
+  render();
+
+  fitVisibleRestaurants();
     }
 
     function sleep(ms) {
