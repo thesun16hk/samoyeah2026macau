@@ -218,6 +218,324 @@ const restaurants = [
     lng: 113.539877
   },
 
+  // ===== 安德魯 Lord Stow's：7 間 =====
+
+{
+  id: "lord-stows-original",
+  name: "安德魯餅店（路環原店）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門路環市區戴紳禮街1號地下",
+  geocodeQuery: "安德魯餅店 路環原店 澳門",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=安德魯餅店+路環原店+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=安德魯餅店+路環"
+},
+
+{
+  id: "lord-stows-cafe-coloane",
+  name: "安德魯咖啡店（路環）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門路環市區屠場前地9號地下",
+  geocodeQuery: "安德魯咖啡店 路環 澳門",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=安德魯咖啡店+路環+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=安德魯咖啡店"
+},
+
+{
+  id: "lord-stows-garden-cafe",
+  name: "安德魯花園咖啡店（路環）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門路環屠場前地21C康靈閣地下",
+  geocodeQuery: "安德魯花園咖啡店 路環 澳門",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=安德魯花園咖啡店+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=安德魯花園咖啡店"
+},
+
+{
+  id: "lord-stows-express-coloane",
+  name: "安德魯蛋撻外賣專門店（路環）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門路環市區屠場前地康靈閣17及19號地下",
+  geocodeQuery: "安德魯蛋撻外賣專門店 路環 澳門",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=安德魯蛋撻外賣專門店+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=安德魯蛋撻外賣專門店"
+},
+
+{
+  id: "lord-stows-venetian",
+  name: "安德魯餅店及咖啡店（威尼斯人）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門威尼斯人購物中心臉譜街870及308號舖",
+  geocodeQuery: "安德魯餅店 威尼斯人 澳門",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=安德魯餅店+威尼斯人+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=安德魯餅店+威尼斯人"
+},
+
+{
+  id: "lord-stows-taipa",
+  name: "安德魯餅店（氹仔官也街）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門氹仔官也街9號栢鴻大廈地下E座",
+  geocodeQuery: "安德魯餅店 官也街 澳門",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=安德魯餅店+官也街+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=安德魯餅店+官也街"
+},
+
+{
+  id: "lord-stows-londoner",
+  name: "安德魯餅店及咖啡店（倫敦人）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "路氹連貫公路澳門倫敦人購物中心2樓2113舖",
+  geocodeQuery: "安德魯餅店 倫敦人 澳門",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=安德魯餅店+倫敦人+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=安德魯餅店+倫敦人"
+},
+
+
+// ===== 瑪嘉烈：1 間 =====
+
+{
+  id: "margarets-cafe-e-nata",
+  name: "瑪嘉烈蛋撻店",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門馬統領街金利來大廈17B地舖",
+  geocodeQuery: "瑪嘉烈蛋撻店 澳門",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=瑪嘉烈蛋撻店+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=瑪嘉烈蛋撻店"
+},
+
+
+// ===== 占西餅店：1 間 =====
+
+{
+  id: "jim-sai-bakery",
+  name: "占西餅店",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門風順堂街31號",
+  geocodeQuery: "占西餅店 澳門 風順堂街",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=占西餅店+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=占西餅店"
+},
+
+
+// ===== BAMU 八目烘焙：5 間 =====
+
+{
+  id: "bamu-holland-garden",
+  name: "BAMU 八目烘焙（荷蘭園）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門沙嘉都喇賈罷麗街16A號寶勝閣地下H",
+  geocodeQuery: "BAMU 八目烘焙 荷蘭園 澳門",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=BAMU+八目烘焙+荷蘭園+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=BAMU+八目烘焙+荷蘭園"
+},
+
+{
+  id: "bamu-rua-da-tercena",
+  name: "BAMU 八目烘焙（果欄街總店）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門果欄街25號德富大廈地下B舖",
+  geocodeQuery: "BAMU 八目烘焙 果欄街 澳門",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=BAMU+八目烘焙+果欄街+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=BAMU+八目烘焙+果欄街"
+},
+
+{
+  id: "bamu-taipa",
+  name: "BAMU 八目烘焙（氹仔）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門氹仔南京街36號曼克頓地下B座",
+  geocodeQuery: "BAMU 八目烘焙 氹仔 南京街 澳門",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=BAMU+八目烘焙+氹仔+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=BAMU+八目烘焙+氹仔"
+},
+
+{
+  id: "bamu-st-pauls",
+  name: "BAMU 八目烘焙（大三巴）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門大三巴巷1號",
+  geocodeQuery: "BAMU 八目烘焙 大三巴 澳門",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=BAMU+八目烘焙+大三巴+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=BAMU+八目烘焙+大三巴"
+},
+
+{
+  id: "bamu-guia",
+  name: "BAMU 八目烘焙（東望洋）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門東望洋新街74號明輝大廈地下B座",
+  geocodeQuery: "BAMU 八目烘焙 東望洋 澳門",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=BAMU+八目烘焙+東望洋+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=BAMU+八目烘焙+東望洋"
+},
+
+
+// ===== Manteigaria 曼撻格利亞：2 間 =====
+
+{
+  id: "manteigaria-nam-van",
+  name: "曼撻格利亞 Manteigaria（南灣）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門南灣大馬路598號萬勝大廈地下E座",
+  geocodeQuery: "Manteigaria Macau 南灣",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=Manteigaria+Macau+南灣",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=Manteigaria+Macau+南灣"
+},
+
+{
+  id: "manteigaria-taipa",
+  name: "曼撻格利亞 Manteigaria（氹仔）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門氹仔地堡街22號",
+  geocodeQuery: "Manteigaria Macau 氹仔 地堡街22號",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=Manteigaria+Macau+氹仔",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=Manteigaria+Macau+氹仔"
+},
+
+
+// ===== Goat Bakers：3 間 =====
+// 「蘭王葡撻」係 Goat Bakers 產品，所以唔另外重複加 pin。
+
+{
+  id: "goat-bakers-horta-costa",
+  name: "Goat Bakers（高士德）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門永聯台52號永聯大廈地下C",
+  geocodeQuery: "Goat Bakers 高士德 澳門 永聯台",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=Goat+Bakers+高士德+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=Goat+Bakers+高士德"
+},
+
+{
+  id: "goat-bakers-taipa",
+  name: "Goat Bakers（氹仔）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門氹仔巴波沙總督街80號地下C",
+  geocodeQuery: "Goat Bakers 氹仔 巴波沙總督街80號",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=Goat+Bakers+氹仔+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=Goat+Bakers+氹仔"
+},
+
+{
+  id: "goat-bakers-nam-van",
+  name: "Goat Bakers（南灣）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門商業大馬路185號W舖",
+  geocodeQuery: "Goat Bakers 南灣 澳門 商業大馬路185號",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=Goat+Bakers+南灣+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=Goat+Bakers+南灣"
+},
+
+
+// ===== Céleste Artisan 天羽：1 間 =====
+
+{
+  id: "celeste-artisan-taipa",
+  name: "Céleste Artisan 天羽",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門氹仔飛能便度街21號地下",
+  geocodeQuery: "Céleste Artisan 天羽 澳門 氹仔",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=Céleste+Artisan+天羽+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=Céleste+Artisan+天羽"
+},
+
+
+// ===== 新好利：1 間 =====
+
+{
+  id: "san-hou-lei-taipa",
+  name: "新好利咖啡餅店",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門氹仔生央街15A-B號地舖",
+  geocodeQuery: "新好利咖啡餅店 澳門 氹仔",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=新好利咖啡餅店+澳門+氹仔",
+  openRiceUrl: "https://www.openrice.com/en/macau/r-estabelecimento-de-comidas-san-hou-lei-vila-de-taipa-portuguese-r24350"
+},
+
+
+// ===== 鑽葡咖啡美食：3 間 =====
+
+{
+  id: "chuen-pou-ha-wan",
+  name: "鑽葡咖啡美食（下環）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門下環街60號地下及閣樓",
+  geocodeQuery: "鑽葡咖啡美食 下環 澳門",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=鑽葡咖啡美食+下環+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=鑽葡咖啡美食+下環"
+},
+
+{
+  id: "chuen-pou-polida",
+  name: "鑽葡咖啡美食（保利達）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門黑沙環中街155號保利達花園地下BN舖",
+  geocodeQuery: "鑽葡咖啡美食 保利達 澳門",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=鑽葡咖啡美食+保利達+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=鑽葡咖啡美食+保利達"
+},
+
+{
+  id: "chuen-pou-guanqian",
+  name: "鑽葡咖啡美食（關前街）",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門關前後街49A號",
+  geocodeQuery: "鑽葡咖啡美食 關前街 澳門",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=鑽葡咖啡美食+關前街+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=鑽葡咖啡美食+關前街"
+},
+
+
+// ===== 一見葡撻：1 間 =====
+
+{
+  id: "yat-kin-egg-tart",
+  name: "一見葡撻",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門冼星海大馬路245號地下T舖",
+  geocodeQuery: "一見葡撻 澳門 冼星海大馬路245號",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=一見葡撻+澳門",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=一見葡撻"
+},
+
+
+// ===== 葡啡：1 間 =====
+
+{
+  id: "portuguese-bakery-po-cafe",
+  name: "葡啡",
+  category: "葡撻",
+  emoji: "🥧",
+  address: "澳門下環鹽里22號地舖",
+  geocodeQuery: "葡啡 澳門 鹽里",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=葡啡+澳門+鹽里",
+  openRiceUrl: "https://www.openrice.com/zh/macau/restaurants?whatwhere=葡啡+澳門"
+},
 
   // ==========================================================
   // 🧋 免費珍奶
